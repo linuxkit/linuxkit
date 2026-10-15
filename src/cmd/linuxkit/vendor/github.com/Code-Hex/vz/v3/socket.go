@@ -97,17 +97,17 @@ func (v *VirtioSocketDevice) Listen(port uint32) (*VirtioSocketListener, error) 
 
 	ch := make(chan connResults, 1) // should I increase more caps?
 
-	handler := cgo.NewHandle(func(conn *VirtioSocketConnection, err error) {
+	handle := cgo.NewHandle(func(conn *VirtioSocketConnection, err error) {
 		ch <- connResults{conn, err}
 	})
 	ptr := C.newVZVirtioSocketListener(
-		unsafe.Pointer(&handler),
+		C.uintptr_t(handle),
 	)
 	listener := &VirtioSocketListener{
 		pointer:     objc.NewPointer(ptr),
 		vsockDevice: v,
 		port:        port,
-		handler:     handler,
+		handle:      handle,
 		acceptch:    ch,
 	}
 
@@ -122,10 +122,10 @@ func (v *VirtioSocketDevice) Listen(port uint32) (*VirtioSocketListener, error) 
 }
 
 //export connectionHandler
-func connectionHandler(connPtr, errPtr, cgoHandlerPtr unsafe.Pointer) {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
-	handler := cgoHandler.Value().(func(*VirtioSocketConnection, error))
-	defer cgoHandler.Delete()
+func connectionHandler(connPtr, errPtr unsafe.Pointer, cgoHandleUintptr C.uintptr_t) {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
+	handler := cgoHandle.Value().(func(*VirtioSocketConnection, error))
+	defer cgoHandle.Delete()
 	// see: startHandler
 	if err := newNSError(errPtr); err != nil {
 		handler(nil, err)
@@ -138,13 +138,13 @@ func connectionHandler(connPtr, errPtr, cgoHandlerPtr unsafe.Pointer) {
 // Connect Initiates a connection to the specified port of the guest operating system.
 //
 // This method initiates the connection asynchronously, and executes the completion handler when the results are available.
-// If the guest operating system doesn’t listen for connections to the specifed port, this method does nothing.
+// If the guest operating system doesn’t listen for connections to the specified port, this method does nothing.
 //
 // For a successful connection, this method sets the sourcePort property of the resulting VZVirtioSocketConnection object to a random port number.
 // see: https://developer.apple.com/documentation/virtualization/vzvirtiosocketdevice/3656677-connecttoport?language=objc
 func (v *VirtioSocketDevice) Connect(port uint32) (*VirtioSocketConnection, error) {
 	ch := make(chan connResults, 1)
-	cgoHandler := cgo.NewHandle(func(conn *VirtioSocketConnection, err error) {
+	cgoHandle := cgo.NewHandle(func(conn *VirtioSocketConnection, err error) {
 		ch <- connResults{conn, err}
 		close(ch)
 	})
@@ -152,7 +152,7 @@ func (v *VirtioSocketDevice) Connect(port uint32) (*VirtioSocketConnection, erro
 		objc.Ptr(v),
 		v.dispatchQueue,
 		C.uint32_t(port),
-		unsafe.Pointer(&cgoHandler),
+		C.uintptr_t(cgoHandle),
 	)
 	result := <-ch
 	runtime.KeepAlive(v)
@@ -170,7 +170,7 @@ type connResults struct {
 type VirtioSocketListener struct {
 	*pointer
 	vsockDevice *VirtioSocketDevice
-	handler     cgo.Handle
+	handle      cgo.Handle
 	port        uint32
 	acceptch    chan connResults
 	closeOnce   sync.Once
@@ -197,7 +197,7 @@ func (v *VirtioSocketListener) Close() error {
 			v.vsockDevice.dispatchQueue,
 			C.uint32_t(v.port),
 		)
-		v.handler.Delete()
+		v.handle.Delete()
 	})
 	return nil
 }
@@ -226,9 +226,9 @@ func (a *VirtioSocketListenerAddr) Network() string { return "vsock" }
 func (a *VirtioSocketListenerAddr) String() string { return fmt.Sprintf("%d:%d", a.CID, a.Port) }
 
 //export shouldAcceptNewConnectionHandler
-func shouldAcceptNewConnectionHandler(cgoHandlerPtr, connPtr, devicePtr unsafe.Pointer) C.bool {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
-	handler := cgoHandler.Value().(func(*VirtioSocketConnection, error))
+func shouldAcceptNewConnectionHandler(cgoHandleUintptr C.uintptr_t, connPtr, devicePtr unsafe.Pointer) C.bool {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
+	handler := cgoHandle.Value().(func(*VirtioSocketConnection, error))
 
 	// see: startHandler
 	conn, err := newVirtioSocketConnection(connPtr)

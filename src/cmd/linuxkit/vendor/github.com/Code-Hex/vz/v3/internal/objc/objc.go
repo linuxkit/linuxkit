@@ -28,9 +28,12 @@ void insertNSMutableDictionary(void *dict, char *key, void *val)
 
 void releaseNSObject(void* o)
 {
-	@autoreleasepool {
-		[(NSObject*)o release];
-	}
+	[(NSObject*)o release];
+}
+
+void retainNSObject(void* o)
+{
+	[(NSObject*)o retain];
 }
 
 static inline void releaseDispatch(void *queue)
@@ -77,8 +80,15 @@ func NewPointer(p unsafe.Pointer) *Pointer {
 }
 
 // release releases allocated resources in objective-c world.
+// decrements reference count.
 func (p *Pointer) release() {
 	C.releaseNSObject(p._ptr)
+	runtime.KeepAlive(p)
+}
+
+// retain increments reference count in objective-c world.
+func (p *Pointer) retain() {
+	C.retainNSObject(p._ptr)
 	runtime.KeepAlive(p)
 }
 
@@ -94,11 +104,17 @@ func (o *Pointer) ptr() unsafe.Pointer {
 type NSObject interface {
 	ptr() unsafe.Pointer
 	release()
+	retain()
 }
 
 // Release releases allocated resources in objective-c world.
 func Release(o NSObject) {
 	o.release()
+}
+
+// Retain increments reference count in objective-c world.
+func Retain(o NSObject) {
+	o.retain()
 }
 
 // Ptr returns unsafe.Pointer of the NSObject

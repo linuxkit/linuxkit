@@ -192,7 +192,7 @@ func WithCreatingEFIVariableStore() NewEFIVariableStoreOption {
 }
 
 // NewEFIVariableStore Initialize the variable store. If no options are specified,
-// it initialises from the paths that exist.
+// it initializes from the paths that exist.
 //
 // This is only supported on macOS 13 and newer, error will
 // be returned on older versions.

@@ -16,10 +16,10 @@
 #import <Virtualization/Virtualization.h>
 
 /* exported from cgo */
-void linuxInstallRosettaWithCompletionHandler(void *cgoHandler, void *errPtr);
+void linuxInstallRosettaWithCompletionHandler(uintptr_t cgoHandle, void *errPtr);
 
 void *newVZLinuxRosettaDirectoryShare(void **error);
-void linuxInstallRosetta(void *cgoHandler);
+void linuxInstallRosetta(uintptr_t cgoHandle);
 int availabilityVZLinuxRosettaDirectoryShare();
 
 void *newVZMacOSVirtualMachineStartOptions(bool startUpFromMacOSRecovery);

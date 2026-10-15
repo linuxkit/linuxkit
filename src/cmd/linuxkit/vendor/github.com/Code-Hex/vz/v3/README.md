@@ -72,7 +72,7 @@ If you want to use [`VZBridgedNetworkDeviceAttachment`](https://developer.apple.
 
 If you compile using an older Xcode SDK, you will get the following warnings.
 
-This example warns that macOS 12.3 API and macOS 13 API are not available in the binary build. Running this binary on a modern OS (macOS 12.3 or macOS 13) means that these APIs are not available. This means these APIs are not available even if you are running this binary on a modern OS (macOS 12.3 or macOS 13). 
+This example warns that macOS 12.3 API and macOS 13 API are not available in the binary build. This means these APIs are not available even if you are running this binary on a modern OS (macOS 12.3 or macOS 13).
 
 ```
 $ go build .
@@ -96,7 +96,7 @@ The package provides a mechanism for checking the availability of the respective
 
 ```go
 bootLoader, err := vz.NewEFIBootLoader()
-if errors.Is(err, vz.ErrUnsupportedOSVersion) || errors.Is(err, ErrBuildTargetOSVersion) {
+if errors.Is(err, vz.ErrUnsupportedOSVersion) || errors.Is(err, vz.ErrBuildTargetOSVersion) {
   return fallbackBootLoader()
 }
 if err != nil {
@@ -131,6 +131,12 @@ $ # Download PUI PUI Linux, Only required the first time.
 $ make download_kernel
 $ make test
 ```
+
+## Which projects use this library?
+
+- [vfkit](https://github.com/crc-org/vfkit) is a macOS command-line hypervisor for Apple and Intel CPUs that supports most of Apple's Virtualization Framework features.
+- [Lima](https://lima-vm.io/) launches Linux virtual machines with automatic file sharing and port forwarding (similar to WSL2).
+- [linuxkit](https://github.com/linuxkit/linuxkit) is a toolkit for building custom minimal, immutable Linux distributions.
 
 ## LICENSE
 

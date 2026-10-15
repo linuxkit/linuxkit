@@ -19,10 +19,10 @@ bool vmCanStop(void *machine, void *queue)
     RAISE_UNSUPPORTED_MACOS_EXCEPTION();
 }
 
-void stopWithCompletionHandler(void *machine, void *queue, void *completionHandler)
+void stopWithCompletionHandler(void *machine, void *queue, uintptr_t cgoHandle)
 {
     if (@available(macOS 12, *)) {
-        vm_completion_handler_t handler = makeVMCompletionHandler(completionHandler);
+        vm_completion_handler_t handler = makeVMCompletionHandler(cgoHandle);
         dispatch_sync((dispatch_queue_t)queue, ^{
             [(VZVirtualMachine *)machine stopWithCompletionHandler:handler];
         });
@@ -211,6 +211,31 @@ void *newVZVirtioSoundDeviceHostOutputStreamConfiguration()
 }
 
 /*!
+ @abstract Initialize the attachment from a local file url.
+ @param diskPath Local file path to the disk image in RAW format.
+ @param readOnly If YES, the device attachment is read-only, otherwise the device can write data to the disk image.
+ @param cacheMode The caching mode from one of the available VZDiskImageCachingMode options.
+ @param syncMode How the disk image synchronizes with the underlying storage when the guest operating system flushes data, described by one of the available VZDiskImageSynchronizationMode modes.
+ @param error If not nil, assigned with the error if the initialization failed.
+ @return A VZDiskImageStorageDeviceAttachment on success. Nil otherwise and the error parameter is populated if set.
+ */
+void *newVZDiskImageStorageDeviceAttachmentWithCacheAndSyncMode(const char *diskPath, bool readOnly, int cacheMode, int syncMode, void **error)
+{
+    if (@available(macOS 12, *)) {
+        NSString *diskPathNSString = [NSString stringWithUTF8String:diskPath];
+        NSURL *diskURL = [NSURL fileURLWithPath:diskPathNSString];
+        return [[VZDiskImageStorageDeviceAttachment alloc]
+                    initWithURL:diskURL
+                       readOnly:(BOOL)readOnly
+                    cachingMode:(VZDiskImageCachingMode)cacheMode
+            synchronizationMode:(VZDiskImageSynchronizationMode)syncMode
+                          error:(NSError *_Nullable *_Nullable)error];
+    }
+
+    RAISE_UNSUPPORTED_MACOS_EXCEPTION();
+}
+
+/*!
  @abstract Initialize the VZSharedDirectory from the directory path and read only option.
  @param dirPath
     The directory path that will be share.
@@ -318,16 +343,12 @@ void *newVZUSBKeyboardConfiguration()
     RAISE_UNSUPPORTED_MACOS_EXCEPTION();
 }
 
-void sharedApplication()
+void startVirtualMachineWindow(void *machine, double width, double height)
 {
     // Create a shared app instance.
     // This will initialize the global variable
     // 'NSApp' with the application instance.
     [VZApplication sharedApplication];
-}
-
-void startVirtualMachineWindow(void *machine, double width, double height)
-{
     if (@available(macOS 12, *)) {
         @autoreleasepool {
             AppDelegate *appDelegate = [[[AppDelegate alloc]

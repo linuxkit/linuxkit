@@ -41,6 +41,51 @@ stdio, providing interactive access to the VM. The output of the VM
 can be re-directed to a file or pipe, but then stdin is not available.
 Virtualization.Framework does not provide a console device.
 
+## Host microphone input
+
+This section applies to the LinuxKit CLI Virtualization.Framework backend and its custom Linux guests.
+It does not enable microphone input for the Docker Desktop backend.
+
+On macOS 12 or later, `linuxkit run virtualization` passes the host's default microphone input to the VM by default.
+Use `--audio-input=false` to disable host microphone configuration and permission checks.
+
+On first use, macOS asks for microphone access; the prompt may name `linuxkit` or the launching app, such as Terminal.
+Grant or review access in System Settings > Privacy & Security > Microphone.
+If access is denied or restricted, or the executable lacks its microphone usage description, the command exits before starting the VM.
+
+Build and sign the macOS CLI from `src/cmd/linuxkit`, for example:
+
+```sh
+make GOOS=darwin GOARCH=arm64 local-build sign
+```
+
+The Darwin Make target embeds `linuxkit.Info.plist` and signs the executable with `linuxkit.entitlements`, including the audio input entitlement.
+
+The Linux guest kernel needs `CONFIG_SND_VIRTIO=y`, or `CONFIG_SND_VIRTIO=m` with `virtio_snd` loaded, for virtio sound support.
+For Compose services launched by `dockerd` inside the guest, pass the guest sound devices through to the service:
+
+```yaml
+services:
+  recorder:
+    devices:
+      - /dev/snd:/dev/snd
+```
+
+Local integration testing on an ARM64 Mac used LinuxKit 6.12.59, the #4226 changes, and a separate experimental guest `virtio-snd` patch.
+After three switches from AirPods to the built-in input, the first six-second guest capture in each cycle matched the host reference bit for bit; six VM shutdown cycles completed without a callback panic.
+These results do not verify the standalone stock-kernel configuration.
+
+The stock guest driver stalled after repeated short Virtualization.framework capture completions in local testing.
+The experimental patch stages returned audio bytes, bounds outstanding capture requests against ring capacity, and fixes request teardown and restart handling.
+Its test image uses `virtio_snd.capture_staging=1` and `virtio_snd.capture_packed_status=1`; these options are not part of the upstream Linux driver or this CLI change.
+
+The latest repeated-recording and 65-second acceptance suites did not all pass under host load and input changes.
+One reference comparison coincided with a 744-frame host ADC timestamp jump, and the 65-second run saw an unexpected default-input switch.
+Reliable lossless long-running capture remains unverified; input-switch testing opened a fresh recorder after stopping the interrupted one, so seamless switching during an active recording is also unverified.
+
+On the tested Mac, enabling the Codex Audio visualizer reproduced a CoreAudio startup hang; disabling it restored capture without restarting the audio service.
+This CLI change does not resolve that host-side interaction.
+
 
 ## Disks
 

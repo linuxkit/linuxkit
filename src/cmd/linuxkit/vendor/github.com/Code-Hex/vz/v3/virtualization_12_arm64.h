@@ -36,9 +36,9 @@ typedef struct VZMacHardwareModelStruct {
 } VZMacHardwareModelStruct;
 
 /* exported from cgo */
-void macOSRestoreImageCompletionHandler(void *cgoHandler, void *restoreImage, void *errPtr);
-void macOSInstallCompletionHandler(void *cgoHandler, void *errPtr);
-void macOSInstallFractionCompletedHandler(void *cgoHandlerPtr, double completed);
+void macOSRestoreImageCompletionHandler(uintptr_t cgoHandle, void *restoreImage, void *errPtr);
+void macOSInstallCompletionHandler(uintptr_t cgoHandle, void *errPtr);
+void macOSInstallFractionCompletedHandler(uintptr_t cgoHandle, double completed);
 
 /* Mac Configurations */
 void *newVZMacPlatformConfiguration();
@@ -62,15 +62,15 @@ void *newVZMacMachineIdentifierWithBytes(void *machineIdentifierBytes, int len);
 nbyteslice getVZMacMachineIdentifierDataRepresentation(void *machineIdentifierPtr);
 
 VZMacOSRestoreImageStruct convertVZMacOSRestoreImage2Struct(void *restoreImagePtr);
-void fetchLatestSupportedMacOSRestoreImageWithCompletionHandler(void *cgoHandler);
-void loadMacOSRestoreImageFile(const char *ipswPath, void *cgoHandler);
+void fetchLatestSupportedMacOSRestoreImageWithCompletionHandler(uintptr_t cgoHandle);
+void loadMacOSRestoreImageFile(const char *ipswPath, uintptr_t cgoHandle);
 
 VZMacOSConfigurationRequirementsStruct convertVZMacOSConfigurationRequirements2Struct(void *requirementsPtr);
 VZMacHardwareModelStruct convertVZMacHardwareModel2Struct(void *hardwareModelPtr);
 
 void *newVZMacOSInstaller(void *virtualMachine, void *vmQueue, const char *restoreImageFilePath);
 void *newProgressObserverVZMacOSInstaller();
-void installByVZMacOSInstaller(void *installerPtr, void *vmQueue, void *progressObserverPtr, void *completionHandler, void *fractionCompletedHandler);
+void installByVZMacOSInstaller(void *installerPtr, void *vmQueue, void *progressObserverPtr, uintptr_t completionHandler, uintptr_t fractionCompletedHandler);
 void cancelInstallVZMacOSInstaller(void *installerPtr);
 
 #endif

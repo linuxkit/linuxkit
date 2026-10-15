@@ -231,6 +231,15 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
 		socketDeviceConfiguration,
 	})
+	if cfg.audioInput {
+		audioDeviceConfiguration, err := newVirtualizationFrameworkHostMicrophoneConfiguration()
+		if err != nil {
+			return fmt.Errorf("could not configure host microphone input: %w", err)
+		}
+		config.SetAudioDevicesVirtualMachineConfiguration([]vz.AudioDeviceConfiguration{
+			audioDeviceConfiguration,
+		})
+	}
 
 	if len(cfg.virtiofsShares) > 0 {
 		var cs []vz.DirectorySharingDeviceConfiguration
@@ -265,29 +274,34 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+	if cfg.audioInput {
+		if err := ensureVirtualizationFrameworkMicrophonePermission(ctx); err != nil {
+			return fmt.Errorf("host microphone permission check failed: %w", err)
+		}
+	}
 
 	vm, err := vz.NewVirtualMachine(config)
 	if err != nil {
 		return fmt.Errorf("could not create virtual machine: %v", err)
 	}
 
-	timeouts := defaultVirtualizationFrameworkLifecycleTimeouts()
-	err = runVirtualizationFrameworkVMLifecycle(
-		ctx,
-		forceStop,
-		virtualizationFrameworkVMAdapter{vm: vm},
-		vm.StateChangedNotify(),
-		vz.VirtualMachineStateStopped,
-		vz.VirtualMachineStateRunning,
-		vz.VirtualMachineStateError,
-		timeouts,
-		virtualizationFrameworkLifecycleHooks{
-			Logf:      log.Infof,
-			OnRunning: func() { log.Infof("start VM is running") },
-		},
-	)
-	return err
-
+	return withVirtualizationFrameworkVMLifecycleAlive(vm, func() error {
+		timeouts := defaultVirtualizationFrameworkLifecycleTimeouts()
+		return runVirtualizationFrameworkVMLifecycle(
+			ctx,
+			forceStop,
+			virtualizationFrameworkVMAdapter{vm: vm},
+			vm.StateChangedNotify(),
+			vz.VirtualMachineStateStopped,
+			vz.VirtualMachineStateRunning,
+			vz.VirtualMachineStateError,
+			timeouts,
+			virtualizationFrameworkLifecycleHooks{
+				Logf:      log.Infof,
+				OnRunning: func() { log.Infof("start VM is running") },
+			},
+		)
+	})
 }
 
 type virtualizationFrameworkVMAdapter struct {
