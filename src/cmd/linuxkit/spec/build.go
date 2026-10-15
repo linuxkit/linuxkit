@@ -12,5 +12,6 @@ type ImageBuildOptions struct {
 	NetworkMode   string
 	Dockerfile    string
 	SSH           []string
+	Secrets       []string
 	RegistryAuths map[string]RegistryAuth
 }

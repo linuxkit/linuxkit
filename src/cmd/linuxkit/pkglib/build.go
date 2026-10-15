@@ -47,6 +47,7 @@ type buildOpts struct {
 	buildArgs        []string
 	progress         string
 	ssh              []string
+	secrets          []string
 	registryAuth     map[string]spec.RegistryAuth
 }
 
@@ -221,6 +222,14 @@ func WithProgress(progress string) BuildOpt {
 func WithSSH(ssh []string) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.ssh = ssh
+		return nil
+	}
+}
+
+// WithSecrets sets up the package to expose build secrets to the build
+func WithSecrets(secrets []string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.secrets = secrets
 		return nil
 	}
 }
@@ -470,6 +479,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 
 		imageBuildOpts.SSH = bo.ssh
+		imageBuildOpts.Secrets = bo.secrets
 		imageBuildOpts.RegistryAuths = bo.registryAuth
 
 		// build for each arch and save in the linuxkit cache

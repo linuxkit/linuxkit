@@ -59,6 +59,7 @@ func pkgBuildCmd() *cobra.Command {
 		buildArgFiles  []string
 		progress       string
 		ssh            []string
+		secrets        []string
 		dryRun         bool
 	)
 	cmd := &cobra.Command{
@@ -214,6 +215,9 @@ func pkgBuildCmd() *cobra.Command {
 			if len(ssh) > 0 {
 				opts = append(opts, pkglib.WithSSH(ssh))
 			}
+			if len(secrets) > 0 {
+				opts = append(opts, pkglib.WithSecrets(secrets))
+			}
 			if len(registryCreds) > 0 {
 				registryCredMap := make(map[string]spec.RegistryAuth)
 				for _, cred := range registryCreds {
@@ -326,6 +330,7 @@ func pkgBuildCmd() *cobra.Command {
 	cmd.Flags().StringArrayVar(&buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
 	cmd.Flags().StringVar(&progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
 	cmd.Flags().StringArrayVar(&ssh, "ssh", nil, "SSH agent config to use for build, follows the syntax used for buildx and buildctl, see https://docs.docker.com/reference/dockerfile/#run---mounttypessh")
+	cmd.Flags().StringArrayVar(&secrets, "secret", nil, "Secret to expose to the build, follows the syntax used for buildx and buildctl, e.g. id=mysecret,src=/path or id=mysecret,env=VAR, see https://docs.docker.com/reference/dockerfile/#run---mounttypesecret")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Do not actually build, just print the final docker command that would be used")
 
 	return cmd
