@@ -96,10 +96,33 @@ supported and the disks are in raw format.
 ## Power management
 
 On the first SIGTERM or SIGINT, the runner requests a graceful shutdown
-through Virtualization.Framework, which sends an ACPI power event. The
-guest must handle ACPI events to shut down; this is provided by the
-[`acpid` package](../pkg/acpid). An example is available in the
+through Virtualization.Framework, which delivers a guest power-button event.
+On Apple Silicon, this uses a PL061 GPIO controller and a `gpio-keys` input
+device. The ARM64 kernel needs `CONFIG_GPIO_PL061=y`,
+`CONFIG_KEYBOARD_GPIO=y`, and `CONFIG_INPUT_EVDEV=y`.
+The guest must also run the [`acpid` package](../pkg/acpid), whose BusyBox
+event handler invokes `poweroff` to request an orderly shutdown from init.
+An example of including the service is available in the
 [Docker for Mac example](../examples/docker-for-mac.yml).
+
+Use an acpid image built with the power-button handler and a kernel built
+with these options; older pinned images do not acquire the changes automatically.
+A successful shutdown request means the event was requested, rather than
+confirmation that the guest has completed shutdown. If the VM keeps running,
+check `/proc/bus/input/devices` for `gpio-keys` and `/var/log/acpid.log`
+for event-handler errors.
+
+The default acpid power-button handler also applies on other platforms using
+the rebuilt package. A power-button press that previously had no executable
+handler now requests shutdown. Custom power policies can use an acpid action
+mapping in `/etc/acpid.conf` and a corresponding handler under `/etc/acpi`.
+
+The runner's wait does not extend the guest's process shutdown grace period.
+LinuxKit init runs `/etc/shutdown.d`, sends SIGTERM to the remaining processes,
+waits five seconds, then sends SIGKILL before syncing and unmounting filesystems.
+Applications that need longer to flush data should be stopped and their writes
+completed before requesting VM shutdown. Orderly VM shutdown alone does not
+guarantee that an active recording or database transaction has been saved.
 
 After the first signal, the runner waits for the VM to stop naturally
 without an automatic timeout. A declined shutdown request or request

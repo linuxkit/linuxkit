@@ -1,0 +1,4 @@
+#!/bin/sh
+# BusyBox acpid maps EV_KEY/KEY_POWER presses to PWRF/00000080.
+# Signal the guest init so shutdown hooks and filesystem unmounts run.
+exec /sbin/poweroff

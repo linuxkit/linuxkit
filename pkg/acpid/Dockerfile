@@ -15,5 +15,6 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 FROM scratch
 COPY --from=mirror /out/ /
 COPY --from=mirror2 /out/etc/acpi /etc/acpi
+COPY --chown=0:0 --chmod=0755 power-button /etc/acpi/PWRF/00000080
 
 CMD ["/sbin/acpid", "-f", "-d"]
