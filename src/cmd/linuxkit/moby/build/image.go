@@ -348,7 +348,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		}
 		for _, sbom := range sboms {
 			// sbomWriter will escape out any problematic characters for us
-			if err := opts.SbomGenerator.Add(prefix, sbom); err != nil {
+			if err := opts.SbomGenerator.Add(prefix, ref, sbom); err != nil {
 				return err
 			}
 		}
