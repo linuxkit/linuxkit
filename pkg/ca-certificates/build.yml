@@ -1,1 +1,2 @@
 image: ca-certificates
+network: true
