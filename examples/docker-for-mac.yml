@@ -7,7 +7,7 @@ init:
   - linuxkit/init:1c3e4933ceabd7418b961d66d5d884bf0044ac64
   - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
   - linuxkit/containerd:eb5daf20704109ea58abb38d2b808e0c3a7e3717
-  - linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de
+  - linuxkit/ca-certificates:695574301bd08dda987dccb31e384f7fab3c5c05
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
