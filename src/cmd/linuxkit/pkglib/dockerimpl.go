@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -609,6 +610,18 @@ func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, 
 		attachable = append(attachable, sp)
 	}
 
+	// Add secrets provider if needed
+	if len(imageBuildOpts.Secrets) > 0 {
+		sp, err := build.ParseSecret(imageBuildOpts.Secrets)
+		if err != nil {
+			return err
+		}
+		if err := validateSecretEnvs(imageBuildOpts.Secrets); err != nil {
+			return err
+		}
+		attachable = append(attachable, sp)
+	}
+
 	if stdin != nil {
 		buf := io.NopCloser(bufio.NewReader(stdin))
 		up := uploadprovider.New()
@@ -854,4 +867,38 @@ func (w *writeNopCloser) Close() error {
 }
 func (w *writeNopCloser) Write(p []byte) (n int, err error) {
 	return w.writer.Write(p)
+}
+
+// validateSecretEnvs fails if a secret sourced from an environment variable
+// refers to one that is unset or empty. buildkit would otherwise pass an empty
+// secret, e.g. sending an empty git auth token instead of failing.
+func validateSecretEnvs(secrets []string) error {
+	for _, secret := range secrets {
+		fields, err := csv.NewReader(strings.NewReader(secret)).Read()
+		if err != nil {
+			return fmt.Errorf("failed to parse secret %q: %w", secret, err)
+		}
+		var typ, env, src string
+		for _, field := range fields {
+			key, value, _ := strings.Cut(field, "=")
+			switch strings.ToLower(key) {
+			case "type":
+				typ = value
+			case "env":
+				env = value
+			case "src", "source":
+				src = value
+			}
+		}
+		if typ == "env" && env == "" {
+			env = src
+		}
+		if env == "" {
+			continue
+		}
+		if v, ok := os.LookupEnv(env); !ok || v == "" {
+			return fmt.Errorf("secret %q: environment variable %s is unset or empty", secret, env)
+		}
+	}
+	return nil
 }
