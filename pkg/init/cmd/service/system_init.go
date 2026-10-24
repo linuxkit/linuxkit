@@ -57,6 +57,32 @@ func cleanupTask(ctx context.Context, ctr client.Container) error {
 	}
 }
 
+// listContainers returns the containers known to the containerd started as
+// ctrd. The socket file exists from containerd's bind(), but connections are
+// refused until its listen(), so an unavailable containerd is retried for as
+// long as the process is alive. Any other error, or containerd exiting, is
+// fatal.
+func listContainers(ctx context.Context, ctrd *exec.Cmd, c *client.Client) []client.Container {
+	warned := false
+	for {
+		ctrs, err := c.Containers(ctx)
+		if err == nil {
+			return ctrs
+		}
+		if !errdefs.IsUnavailable(err) {
+			log.WithError(err).Fatal("listing containers")
+		}
+		if sigErr := ctrd.Process.Signal(syscall.Signal(0)); sigErr != nil {
+			log.WithError(ctrd.Wait()).Fatal("containerd process exited")
+		}
+		if !warned {
+			log.WithError(err).Warn("containerd not yet accepting connections, retrying")
+			warned = true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func systemInitCmd(ctx context.Context, args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("system-init", flag.ExitOnError)
@@ -148,10 +174,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 		log.WithError(err).Fatal("creating containerd client")
 	}
 
-	ctrs, err := client.Containers(ctx)
-	if err != nil {
-		log.WithError(err).Fatal("listing containers")
-	}
+	ctrs := listContainers(ctx, cmd, client)
 
 	// Clean up any old containers
 	// None of the errors in this loop are fatal since we want to
