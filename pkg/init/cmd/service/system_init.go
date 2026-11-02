@@ -21,6 +21,9 @@ import (
 
 const (
 	containerdOptsFile = "/etc/containerd/runtime-config.toml"
+	// containerdStartTimeout bounds how long system-init waits, from starting
+	// containerd, for its socket to appear and accept connections.
+	containerdStartTimeout = 60 * time.Second
 )
 
 func cleanupTask(ctx context.Context, ctr client.Container) error {
@@ -57,23 +60,53 @@ func cleanupTask(ctx context.Context, ctr client.Container) error {
 	}
 }
 
+// exitedError reaps the exited containerd process ctrd and reports how it
+// exited. It never returns nil.
+func exitedError(ctrd *exec.Cmd) error {
+	if err := ctrd.Wait(); err != nil {
+		return errors.Wrap(err, "containerd process exited")
+	}
+	return errors.New("containerd process exited")
+}
+
+// waitForSocket waits for the containerd started as ctrd to create sock. It
+// returns an error if containerd exits or deadline passes first.
+func waitForSocket(ctrd *exec.Cmd, sock string, deadline time.Time) error {
+	for {
+		_, err := os.Stat(sock)
+		if err == nil {
+			return nil
+		}
+		if sigErr := ctrd.Process.Signal(syscall.Signal(0)); sigErr != nil {
+			return exitedError(ctrd)
+		}
+		if time.Now().After(deadline) {
+			return errors.Wrap(err, "containerd socket did not appear in time")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 // listContainers returns the containers known to the containerd started as
 // ctrd. The socket file exists from containerd's bind(), but connections are
-// refused until its listen(), so an unavailable containerd is retried for as
-// long as the process is alive. Any other error, or containerd exiting, is
-// fatal.
-func listContainers(ctx context.Context, ctrd *exec.Cmd, c *client.Client) []client.Container {
+// refused until its listen(), so an unavailable containerd is retried while
+// the process is alive, until deadline. It returns an error once deadline
+// passes, on any other error, or if containerd exits.
+func listContainers(ctx context.Context, ctrd *exec.Cmd, c *client.Client, deadline time.Time) ([]client.Container, error) {
 	warned := false
 	for {
 		ctrs, err := c.Containers(ctx)
 		if err == nil {
-			return ctrs
+			return ctrs, nil
 		}
 		if !errdefs.IsUnavailable(err) {
-			log.WithError(err).Fatal("listing containers")
+			return nil, err
 		}
 		if sigErr := ctrd.Process.Signal(syscall.Signal(0)); sigErr != nil {
-			log.WithError(ctrd.Wait()).Fatal("containerd process exited")
+			return nil, exitedError(ctrd)
+		}
+		if time.Now().After(deadline) {
+			return nil, errors.Wrap(err, "containerd not accepting connections in time")
 		}
 		if !warned {
 			log.WithError(err).Warn("containerd not yet accepting connections, retrying")
@@ -153,19 +186,9 @@ func systemInitCmd(ctx context.Context, args []string) {
 		log.WithError(err).Fatal("cannot start containerd")
 	}
 
-	// wait for containerd socket to appear
-	for {
-		_, err := os.Stat(*sock)
-		if err == nil {
-			break
-		}
-		err = cmd.Process.Signal(syscall.Signal(0))
-		if err != nil {
-			// process not there, wait() to find error
-			err = cmd.Wait()
-			log.WithError(err).Fatal("containerd process exited")
-		}
-		time.Sleep(100 * time.Millisecond)
+	deadline := time.Now().Add(containerdStartTimeout)
+	if err := waitForSocket(cmd, *sock, deadline); err != nil {
+		log.WithError(err).Fatal("waiting for containerd socket")
 	}
 
 	// connect to containerd
@@ -174,7 +197,10 @@ func systemInitCmd(ctx context.Context, args []string) {
 		log.WithError(err).Fatal("creating containerd client")
 	}
 
-	ctrs := listContainers(ctx, cmd, client)
+	ctrs, err := listContainers(ctx, cmd, client, deadline)
+	if err != nil {
+		log.WithError(err).Fatal("listing containers")
+	}
 
 	// Clean up any old containers
 	// None of the errors in this loop are fatal since we want to
