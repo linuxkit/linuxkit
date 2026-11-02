@@ -116,6 +116,18 @@ func listContainers(ctx context.Context, ctrd *exec.Cmd, c *client.Client, deadl
 	}
 }
 
+// rebootAndExit logs err and asks init to reboot, since without containerd no
+// service can start and nothing else would recover the system. busybox init
+// acts on the SIGTERM once the sysinit scripts, including this one, finish.
+func rebootAndExit(err error) {
+	log.WithError(err).Error("cannot start services, rebooting")
+	syscall.Sync()
+	if kerr := syscall.Kill(1, syscall.SIGTERM); kerr != nil {
+		log.WithError(kerr).Error("cannot signal init to reboot")
+	}
+	os.Exit(1)
+}
+
 func systemInitCmd(ctx context.Context, args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("system-init", flag.ExitOnError)
@@ -188,7 +200,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 
 	deadline := time.Now().Add(containerdStartTimeout)
 	if err := waitForSocket(cmd, *sock, deadline); err != nil {
-		log.WithError(err).Fatal("waiting for containerd socket")
+		rebootAndExit(errors.Wrap(err, "waiting for containerd socket"))
 	}
 
 	// connect to containerd
@@ -199,7 +211,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 
 	ctrs, err := listContainers(ctx, cmd, client, deadline)
 	if err != nil {
-		log.WithError(err).Fatal("listing containers")
+		rebootAndExit(errors.Wrap(err, "listing containers"))
 	}
 
 	// Clean up any old containers
