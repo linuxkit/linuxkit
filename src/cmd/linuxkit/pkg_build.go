@@ -206,6 +206,7 @@ func pkgBuildCmd() *cobra.Command {
 
 			opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 			opts = append(opts, pkglib.WithBuildBuilderConfig(pkglib.BuilderConfig{
+				Context:    dockerContextFlag(cmd),
 				Name:       builderName.String(),
 				Image:      builderImage.String(),
 				ConfigPath: builderConfig.String(),

@@ -12,6 +12,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/dockercontext"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	buildkitClient "github.com/moby/buildkit/client"
 
@@ -23,29 +24,18 @@ import (
 )
 
 type dockerDryRunnerImpl struct {
+	builder BuilderConfig
 }
 
-func NewDockerDryRunner() DockerRunner {
-	return &dockerDryRunnerImpl{}
+func NewDockerDryRunner(bc BuilderConfig) DockerRunner {
+	return &dockerDryRunnerImpl{builder: bc}
 }
 
 func (dr *dockerDryRunnerImpl) ContextSupportCheck() error {
 	return nil
 }
 
-// builder ensure that a builder container exists or return an error.
-//
-// Process:
-//
-// 1. Get an appropriate docker context.
-// 2. Using the appropriate context, try to find a docker container named `linuxkit-builder` in that context.
-// 3. Return a reference to that container.
-//
-// To get the appropriate docker context:
-//
-// 1. if dockerContext is provided, try to create a builder with that context; if it succeeds, we are done; if not, return an error.
-// 2. try to find an existing named runner with the pattern; if it succeeds, we are done; if not, try next.
-// 3. try to create a generic builder using the default context named "linuxkit".
+// Builder does not connect to or create containers during a dry run.
 func (dr *dockerDryRunnerImpl) Builder(ctx context.Context, dockerContext, platform string) (*buildkitClient.Client, error) {
 	return nil, nil
 }
@@ -59,6 +49,11 @@ func (dr *dockerDryRunnerImpl) Tag(ref, tag string) error {
 }
 
 func (dr *dockerDryRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, platform string, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+	selection, err := dockercontext.ResolveBuilder(dockerContext, dr.builder.Context, platform)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("# builder Docker context: %s (selected by %s)\n", selection.Name, selection.Source)
 	// build args
 	var buildArgs []string
 	for k, v := range imageBuildOpts.BuildArgs {
@@ -80,7 +75,7 @@ func (dr *dockerDryRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContex
 		labels = append(labels, fmt.Sprintf("--label=%s=%s", k, v))
 	}
 
-	fmt.Printf("docker buildx build --platform %s -t %s -f %s %s %s %s %s\n", platform, tag, path.Join(pkg, imageBuildOpts.Dockerfile), strings.Join(buildArgs, " "), strings.Join(labels, " "), network, pkg)
+	fmt.Printf("docker --context %s buildx build --platform %s -t %s -f %s %s %s %s %s\n", selection.Name, platform, tag, path.Join(pkg, imageBuildOpts.Dockerfile), strings.Join(buildArgs, " "), strings.Join(labels, " "), network, pkg)
 
 	return nil
 }

@@ -50,6 +50,7 @@ func newCmd() *cobra.Command {
 		flagVerboseName = "verbose"
 		mirrorsRaw      []string
 		certFiles       []string
+		dockerContext   string
 	)
 	cmd := &cobra.Command{
 		Use:               "linuxkit",
@@ -120,6 +121,7 @@ func newCmd() *cobra.Command {
 	cmd.AddCommand(serveCmd())
 	cmd.AddCommand(versionCmd())
 
+	cmd.PersistentFlags().StringVar(&dockerContext, "context", "", "Docker context for Docker operations; overrides DOCKER_CONTEXT, DOCKER_HOST, and automatic desktop-linux/default selection (per-platform --builders mappings take precedence)")
 	cmd.PersistentFlags().StringVar(&cacheDir, "cache", defaultLinuxkitCache(), fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.PersistentFlags().StringArrayVar(&mirrorsRaw, "mirror", nil, fmt.Sprintf("Mirror to use for pulling images, format is <registry>=<mirror>, e.g. docker.io=http://mymirror.io, or just http://mymirror.io for all not otherwise specified; must include protocol. Can be provided multiple times. Also read from env var %s (space/comma-separated list); CLI flags take precedence.", envVarMirror))
 	cmd.PersistentFlags().StringArrayVar(&certFiles, "cert-file", nil, "Path to certificate files to use for pulling images, can be provided multiple times. Will augment system-provided certs.")
@@ -127,4 +129,10 @@ func newCmd() *cobra.Command {
 	cmd.PersistentFlags().IntVarP(&flagVerbose, flagVerboseName, "v", 1, "Verbosity of logging: 0 = quiet, 1 = info, 2 = debug, 3 = trace. Default is info. Setting it explicitly will create structured logging lines.")
 
 	return cmd
+}
+
+// dockerContextFlag passes the root context override to Docker-aware libraries.
+func dockerContextFlag(cmd *cobra.Command) string {
+	value, _ := cmd.Flags().GetString("context")
+	return value
 }

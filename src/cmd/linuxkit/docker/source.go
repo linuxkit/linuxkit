@@ -25,25 +25,28 @@ func (t readCloser) Close() error {
 // ImageSource a source for an image in the docker engine.
 // Implements a moby.ImageSource.
 type ImageSource struct {
-	ref *reference.Spec
+	ref     *reference.Spec
+	context string
 }
 
 // NewSource return an ImageSource for a specific ref from docker.
-func NewSource(ref *reference.Spec) ImageSource {
+func NewSource(ref *reference.Spec, dockerContext string) ImageSource {
 	return ImageSource{
-		ref: ref,
+		ref:     ref,
+		context: dockerContext,
 	}
 }
 
 // Config return the imagespec.ImageConfig for the given source.
 func (d ImageSource) Config() (imagespec.ImageConfig, error) {
-	cli, err := Client()
+	cli, err := Client(d.context)
 	if err != nil {
 		return imagespec.ImageConfig{}, err
 	}
+	defer func() { _ = cli.Close() }()
 	inspect, err := InspectImage(cli, d.ref)
 	if err != nil {
-		return imagespec.ImageConfig{}, err
+		return imagespec.ImageConfig{}, fmt.Errorf("docker context %q: inspect image %s: %w", d.context, d.ref, err)
 	}
 	// because the other parts expect OCI go-spec structs, not dockertypes structs,
 	// the easiest way to do this is to convert via json
@@ -58,13 +61,13 @@ func (d ImageSource) Config() (imagespec.ImageConfig, error) {
 
 // TarReader return an io.ReadCloser to read the filesystem contents of the image.
 func (d ImageSource) TarReader() (io.ReadCloser, error) {
-	container, err := Create(d.ref.String(), false)
+	container, err := Create(d.ref.String(), false, d.context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create docker image %s: %v", d.ref, err)
+		return nil, fmt.Errorf("failed to create docker image %s: %w", d.ref, err)
 	}
-	contents, err := Export(container)
+	contents, err := Export(container, d.context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to docker export container from container %s: %v", container, err)
+		return nil, fmt.Errorf("failed to docker export container from container %s: %w", container, err)
 	}
 
 	return readCloser{
@@ -72,7 +75,7 @@ func (d ImageSource) TarReader() (io.ReadCloser, error) {
 		closer: func() error {
 			_ = contents.Close()
 
-			return Rm(container)
+			return Rm(container, d.context)
 		},
 	}, nil
 }
@@ -83,7 +86,7 @@ func (d ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	if overrideName != "" {
 		saveName = overrideName
 	}
-	return Save(saveName)
+	return Save(saveName, d.context)
 }
 
 // OCITarReader return an io.ReadCloser to read the save of the image

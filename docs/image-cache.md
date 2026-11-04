@@ -60,6 +60,17 @@ is provided, it always will pull, independent of what is in the cache.
 The read process is smart enough to check each blob in the local cache before downloading
 it from a registry.
 
+## Docker context selection
+
+`linuxkit build --docker` reads images from the context chosen by `--context`,
+`DOCKER_CONTEXT`, `DOCKER_HOST`, or automatic selection of an existing
+`desktop-linux` context followed by `default`. The saved `docker context use`
+selection is ignored.
+`linuxkit pkg build --docker` loads output images into that general context,
+even when platform builders run remotely. Connection failures during optional
+cache reads are reported as warnings before falling back to the LinuxKit cache
+or registry. See [Docker contexts and container backends](docker-contexts.md).
+
 ## Imports from local Docker instance
 
 To import an image from your local Docker daemon into LinuxKit, you’ll need to ensure the image is exported in the [OCI image format](https://docs.docker.com/build/exporters/oci-docker/), which LinuxKit understands.

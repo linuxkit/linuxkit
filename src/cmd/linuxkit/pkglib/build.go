@@ -311,7 +311,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	d := bo.runner
 	switch {
 	case d == nil && bo.dryRun:
-		d = NewDockerDryRunner()
+		d = NewDockerDryRunner(bo.builderConfig)
 	case d == nil:
 		d = NewDockerRunner(p.cache, bo.builderConfig)
 	}
@@ -325,7 +325,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if err := d.ContextSupportCheck(); err != nil {
-		return fmt.Errorf("contexts not supported, check docker version: %v", err)
+		return fmt.Errorf("cannot inspect Docker contexts: %w", err)
 	}
 
 	var (

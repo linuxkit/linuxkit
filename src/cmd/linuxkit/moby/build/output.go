@@ -24,8 +24,8 @@ import (
 var imagesBytes []byte
 var outputImages map[string]string
 
-var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) error{
-	"kernel+initrd": func(base string, image io.Reader, size int, arch string) error {
+var outFuns = map[string]func(base string, ir io.Reader, size int, arch, dockerContext string) error{
+	"kernel+initrd": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, ucode, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
@@ -36,7 +36,7 @@ var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) 
 		}
 		return nil
 	},
-	"tar-kernel-initrd": func(base string, image io.Reader, size int, arch string) error {
+	"tar-kernel-initrd": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, ucode, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
@@ -46,77 +46,77 @@ var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) 
 		}
 		return nil
 	},
-	"iso-bios": func(base string, image io.Reader, size int, arch string) error {
-		err := outputIso(outputImages["iso-bios"], base+".iso", image, arch)
+	"iso-bios": func(base string, image io.Reader, size int, arch, dockerContext string) error {
+		err := outputIso(outputImages["iso-bios"], base+".iso", image, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing iso-bios output: %v", err)
 		}
 		return nil
 	},
-	"iso-efi": func(base string, image io.Reader, size int, arch string) error {
-		err := outputIso(outputImages["iso-efi"], base+"-efi.iso", image, arch)
+	"iso-efi": func(base string, image io.Reader, size int, arch, dockerContext string) error {
+		err := outputIso(outputImages["iso-efi"], base+"-efi.iso", image, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing iso-efi output: %v", err)
 		}
 		return nil
 	},
-	"iso-efi-initrd": func(base string, image io.Reader, size int, arch string) error {
+	"iso-efi-initrd": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
 
-		err = outputImg(outputImages["iso-efi-initrd"], base+"-efi-initrd.iso", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["iso-efi-initrd"], base+"-efi-initrd.iso", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing iso-efi-initrd output: %v", err)
 		}
 		return nil
 	},
-	"raw-bios": func(base string, image io.Reader, size int, arch string) error {
+	"raw-bios": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
 		// TODO: Handle ucode
-		err = outputImg(outputImages["raw-bios"], base+"-bios.img", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["raw-bios"], base+"-bios.img", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing raw-bios output: %v", err)
 		}
 		return nil
 	},
-	"raw-efi": func(base string, image io.Reader, size int, arch string) error {
+	"raw-efi": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["raw-efi"], base+"-efi.img", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["raw-efi"], base+"-efi.img", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing raw-efi output: %v", err)
 		}
 		return nil
 	},
-	"kernel+squashfs": func(base string, image io.Reader, size int, arch string) error {
-		err := outputKernelSquashFS(outputImages["squashfs"], base, image, arch)
+	"kernel+squashfs": func(base string, image io.Reader, size int, arch, dockerContext string) error {
+		err := outputKernelSquashFS(outputImages["squashfs"], base, image, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing kernel+squashfs output: %v", err)
 		}
 		return nil
 	},
-	"kernel+erofs": func(base string, image io.Reader, size int, arch string) error {
-		err := outputKernelEroFS(outputImages["erofs"], base, image, arch)
+	"kernel+erofs": func(base string, image io.Reader, size int, arch, dockerContext string) error {
+		err := outputKernelEroFS(outputImages["erofs"], base, image, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing kernel+erofs output: %v", err)
 		}
 		return nil
 	},
-	"kernel+iso": func(base string, image io.Reader, size int, arch string) error {
-		err := outputKernelISO(outputImages["iso"], base, image, arch)
+	"kernel+iso": func(base string, image io.Reader, size int, arch, dockerContext string) error {
+		err := outputKernelISO(outputImages["iso"], base, image, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing kernel+iso output: %v", err)
 		}
 		return nil
 	},
-	"aws": func(base string, image io.Reader, size int, arch string) error {
+	"aws": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		filename := base + ".raw"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
@@ -129,29 +129,29 @@ var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) 
 		}
 		return nil
 	},
-	"gcp": func(base string, image io.Reader, size int, arch string) error {
+	"gcp": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["gcp"], base+".img.tar.gz", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["gcp"], base+".img.tar.gz", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing gcp output: %v", err)
 		}
 		return nil
 	},
-	"qcow2-efi": func(base string, image io.Reader, size int, arch string) error {
+	"qcow2-efi": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["qcow2-efi"], base+"-efi.qcow2", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["qcow2-efi"], base+"-efi.qcow2", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing qcow2 EFI output: %v", err)
 		}
 		return nil
 	},
-	"qcow2-bios": func(base string, image io.Reader, size int, arch string) error {
+	"qcow2-bios": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		filename := base + ".qcow2"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
@@ -165,44 +165,44 @@ var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) 
 		}
 		return nil
 	},
-	"vhd": func(base string, image io.Reader, size int, arch string) error {
+	"vhd": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["vhd"], base+".vhd", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["vhd"], base+".vhd", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing vhd output: %v", err)
 		}
 		return nil
 	},
-	"dynamic-vhd": func(base string, image io.Reader, size int, arch string) error {
+	"dynamic-vhd": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["dynamic-vhd"], base+".vhd", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["dynamic-vhd"], base+".vhd", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing vhd output: %v", err)
 		}
 		return nil
 	},
-	"vmdk": func(base string, image io.Reader, size int, arch string) error {
+	"vmdk": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		kernel, initrd, cmdline, _, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("error converting to initrd: %v", err)
 		}
-		err = outputImg(outputImages["vmdk"], base+".vmdk", kernel, initrd, cmdline, arch)
+		err = outputImg(outputImages["vmdk"], base+".vmdk", kernel, initrd, cmdline, arch, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing vmdk output: %v", err)
 		}
 		return nil
 	},
-	"rpi3": func(base string, image io.Reader, size int, arch string) error {
+	"rpi3": func(base string, image io.Reader, size int, arch, dockerContext string) error {
 		if runtime.GOARCH != "arm64" {
 			return fmt.Errorf("raspberry Pi output currently only supported on arm64")
 		}
-		err := outputRPi3(outputImages["rpi3"], base+".tar", image)
+		err := outputRPi3(outputImages["rpi3"], base+".tar", image, dockerContext)
 		if err != nil {
 			return fmt.Errorf("error writing rpi3 output: %v", err)
 		}
@@ -215,11 +215,11 @@ var prereq = map[string]string{
 	"qcow2-bios": "mkimage",
 }
 
-func ensurePrereq(out, cache string) error {
+func ensurePrereq(out, cache, dockerContext string) error {
 	var err error
 	p := prereq[out]
 	if p != "" {
-		err = ensureLinuxkitImage(p, cache)
+		err = ensureLinuxkitImage(p, cache, dockerContext)
 	}
 	return err
 }
@@ -234,7 +234,7 @@ func parseOutputImages(b []byte) (map[string]string, error) {
 }
 
 // ValidateFormats checks if the format type is known
-func ValidateFormats(formats []string, cache string) error {
+func ValidateFormats(formats []string, cache, dockerContext string) error {
 	log.Debugf("validating output: %v", formats)
 	if outputImages == nil {
 		var err error
@@ -249,7 +249,7 @@ func ValidateFormats(formats []string, cache string) error {
 		if f == nil {
 			return fmt.Errorf("unknown format type %s", o)
 		}
-		err := ensurePrereq(o, cache)
+		err := ensurePrereq(o, cache, dockerContext)
 		if err != nil {
 			return fmt.Errorf("failed to set up format type %s: %v", o, err)
 		}
@@ -259,10 +259,10 @@ func ValidateFormats(formats []string, cache string) error {
 }
 
 // Formats generates all the specified output formats
-func Formats(base string, image string, formats []string, size int, arch, cache string) error {
+func Formats(base string, image string, formats []string, size int, arch, cache, dockerContext string) error {
 	log.Debugf("format: %v %s", formats, base)
 
-	err := ValidateFormats(formats, cache)
+	err := ValidateFormats(formats, cache, dockerContext)
 	if err != nil {
 		return err
 	}
@@ -275,7 +275,7 @@ func Formats(base string, image string, formats []string, size int, arch, cache 
 			_ = ir.Close()
 		}()
 		f := outFuns[o]
-		if err := f(base, ir, size, arch); err != nil {
+		if err := f(base, ir, size, arch, dockerContext); err != nil {
 			return err
 		}
 	}
@@ -346,7 +346,7 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 	return buf, tw.Close()
 }
 
-func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline, arch string) error {
+func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline, arch, dockerContext string) error {
 	log.Debugf("output img: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	buf, err := tarInitrdKernel(kernel, initrd, cmdline)
@@ -364,10 +364,10 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline, ar
 	if err != nil {
 		return err
 	}
-	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)}, cmdline)
+	return dockerRun(dockerContext, buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)}, cmdline)
 }
 
-func outputIso(image, filename string, filesystem io.Reader, arch string) error {
+func outputIso(image, filename string, filesystem io.Reader, arch, dockerContext string) error {
 	log.Debugf("output ISO: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	output, err := os.Create(filename)
@@ -381,10 +381,10 @@ func outputIso(image, filename string, filesystem io.Reader, arch string) error 
 	if err != nil {
 		return err
 	}
-	return dockerRun(filesystem, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+	return dockerRun(dockerContext, filesystem, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
 }
 
-func outputRPi3(image, filename string, filesystem io.Reader) error {
+func outputRPi3(image, filename string, filesystem io.Reader, dockerContext string) error {
 	log.Debugf("output RPi3: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	output, err := os.Create(filename)
@@ -394,7 +394,7 @@ func outputRPi3(image, filename string, filesystem io.Reader) error {
 	defer func() {
 		_ = output.Close()
 	}()
-	return dockerRun(filesystem, output, image, nil)
+	return dockerRun(dockerContext, filesystem, output, image, nil)
 }
 
 func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string, ucode []byte) error {
@@ -511,7 +511,7 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 }
 
 // outputKernelImage is a unified function for ISO, SquashFS, and EroFS kernel image outputs
-func outputKernelImage(image, base, format, outfile string, filesystem io.Reader, arch string) error {
+func outputKernelImage(image, base, format, outfile string, filesystem io.Reader, arch, dockerContext string) error {
 	log.Debugf("output kernel/%s: %s %s", format, image, base)
 	log.Infof("  %s", outfile)
 
@@ -567,17 +567,17 @@ func outputKernelImage(image, base, format, outfile string, filesystem io.Reader
 	if err != nil {
 		return err
 	}
-	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+	return dockerRun(dockerContext, buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
 }
 
-func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string) error {
-	return outputKernelImage(image, base, "squashfs", base+"-squashfs.img", filesystem, arch)
+func outputKernelSquashFS(image, base string, filesystem io.Reader, arch, dockerContext string) error {
+	return outputKernelImage(image, base, "squashfs", base+"-squashfs.img", filesystem, arch, dockerContext)
 }
 
-func outputKernelEroFS(image, base string, filesystem io.Reader, arch string) error {
-	return outputKernelImage(image, base, "erofs", base+"-erofs.img", filesystem, arch)
+func outputKernelEroFS(image, base string, filesystem io.Reader, arch, dockerContext string) error {
+	return outputKernelImage(image, base, "erofs", base+"-erofs.img", filesystem, arch, dockerContext)
 }
 
-func outputKernelISO(image, base string, filesystem io.Reader, arch string) error {
-	return outputKernelImage(image, base, "iso", base+".iso", filesystem, arch)
+func outputKernelISO(image, base string, filesystem io.Reader, arch, dockerContext string) error {
+	return outputKernelImage(image, base, "iso", base+".iso", filesystem, arch, dockerContext)
 }

@@ -7,7 +7,9 @@ type BuildOpts struct {
 	DecompressKernel bool
 	CacheDir         string
 	DockerCache      bool
-	Arch             string
-	SbomGenerator    *SbomGenerator
-	InputTar         string
+	// DockerContext overrides the Docker context for cache reads and helpers.
+	DockerContext string
+	Arch          string
+	SbomGenerator *SbomGenerator
+	InputTar      string
 }
