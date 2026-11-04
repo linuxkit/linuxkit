@@ -27,7 +27,7 @@ func imageFilename(name string) string {
 	return filepath.Join(MobyDir, "linuxkit", name+"-"+fmt.Sprintf("%x", hash))
 }
 
-func ensureLinuxkitImage(name, cache string) error {
+func ensureLinuxkitImage(name, cache, dockerContext string) error {
 	filename := imageFilename(name)
 	_, err1 := os.Stat(filename + "-kernel")
 	_, err2 := os.Stat(filename + "-initrd.img")
@@ -57,7 +57,7 @@ func ensureLinuxkitImage(name, cache string) error {
 		return err
 	}
 	defer func() { _ = os.Remove(tf.Name()) }()
-	if err := Build(m, tf, BuildOpts{Pull: false, BuilderType: "", DecompressKernel: false, CacheDir: cache, DockerCache: true, Arch: arch}); err != nil {
+	if err := Build(m, tf, BuildOpts{Pull: false, BuilderType: "", DecompressKernel: false, CacheDir: cache, DockerCache: true, DockerContext: dockerContext, Arch: arch}); err != nil {
 		return err
 	}
 	if err := tf.Close(); err != nil {

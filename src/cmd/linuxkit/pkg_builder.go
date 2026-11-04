@@ -41,6 +41,7 @@ func pkgBuilderCmd() *cobra.Command {
 
 			platformsToClean := strings.Split(platforms, ",")
 			bc := pkglib.BuilderConfig{
+				Context:    dockerContextFlag(cmd),
 				Name:       builderName.String(),
 				Image:      builderImage,
 				ConfigPath: builderConfigPath,

@@ -2,10 +2,13 @@ package build
 
 import (
 	"github.com/containerd/containerd/v2/pkg/reference"
+	"github.com/containerd/errdefs"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/docker"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/dockercontext"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+	log "github.com/sirupsen/logrus"
 )
 
 // imageSource given an image ref, get a handle on the image so it can be used as a source for its configuration
@@ -14,17 +17,25 @@ import (
 // Optionally can look in docker image cache first, before falling back to linuxkit cache and OCI registry.
 // Optionally can be told to alwaysPull, in which case it always pulls from the OCI registry.
 // Always works for a single architecture, as we are referencing a specific image.
-func imageSource(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCache bool, platform imagespec.Platform) (lktspec.ImageSource, error) {
+func imageSource(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCache bool, dockerContext string, platform imagespec.Platform) (lktspec.ImageSource, error) {
 	// several possibilities:
 	// - alwaysPull: try to pull it down from the registry to linuxkit cache, then fail
 	// - !alwaysPull && dockerCache: try to read it from docker, then try linuxkit cache, then try to pull from registry, then fail
 	// - !alwaysPull && !dockerCache: try linuxkit cache, then try to pull from registry, then fail
 	// first, try docker, if that is available
 	if !alwaysPull && dockerCache {
-		if err := docker.HasImage(ref, platform.Architecture); err == nil {
-			return docker.NewSource(ref), nil
+		selection, err := dockercontext.Resolve(dockerContext)
+		if err != nil {
+			return nil, err
 		}
-		// docker is not required, so any error - image not available, no docker, whatever - just gets ignored
+		if err := docker.HasImage(ref, platform.Architecture, selection.Name); err == nil {
+			return docker.NewSource(ref, selection.Name), nil
+		} else if errdefs.IsNotFound(err) {
+			log.Debugf("Docker context %q: image %s not found: %v", selection.Name, ref, err)
+		} else {
+			log.Warnf("Docker image-cache lookup failed in context %q; falling back to LinuxKit cache/registry: %v", selection.Name, err)
+		}
+		// Docker is optional; connection errors are reported above before falling back.
 	}
 
 	// get a reference to the local cache; we either will find the ref there or will pull to it

@@ -109,7 +109,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					dir = ""
 				}
 			} else {
-				err := mobybuild.ValidateFormats(buildFormats, cacheDir.String())
+				err := mobybuild.ValidateFormats(buildFormats, cacheDir.String(), dockerContextFlag(cmd))
 				if err != nil {
 					return fmt.Errorf("error parsing formats: %v", err)
 				}
@@ -236,7 +236,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					return fmt.Errorf("error creating sbom generator: %v", err)
 				}
 			}
-			err = mobybuild.Build(m, w, mobybuild.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
+			err = mobybuild.Build(m, w, mobybuild.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, DockerContext: dockerContextFlag(cmd), Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
@@ -248,7 +248,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				}
 
 				log.Infof("Create outputs:")
-				err = mobybuild.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String())
+				err = mobybuild.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String(), dockerContextFlag(cmd))
 				if err != nil {
 					return fmt.Errorf("error writing outputs: %v", err)
 				}

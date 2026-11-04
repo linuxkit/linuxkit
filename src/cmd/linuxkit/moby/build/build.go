@@ -96,7 +96,7 @@ func outputImage(image *moby.Image, section string, index int, prefix string, m 
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
 	}
-	src, err := imageSource(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
+	src, err := imageSource(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.DockerContext, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
 	if err != nil {
 		return fmt.Errorf("could not pull image %s: %v", image.Image, err)
 	}

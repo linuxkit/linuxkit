@@ -200,7 +200,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 	}
 
 	// get a handle on the image, optionally from docker, pulling from registry if necessary.
-	src, err := imageSource(ref, opts.Pull, opts.CacheDir, opts.DockerCache, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
+	src, err := imageSource(ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.DockerContext, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
 	if err != nil {
 		return fmt.Errorf("could not pull image %s: %v", ref, err)
 	}

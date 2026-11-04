@@ -47,7 +47,7 @@ brew install --HEAD linuxkit
 
 Build requirements from source using a container
 - GNU `make`
-- Docker
+- Docker (see [Docker contexts and alternative backends](docs/docker-contexts.md))
 - optionally `qemu`
 
 For a local build using `make local`

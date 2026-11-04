@@ -20,6 +20,8 @@ import (
 
 // BuilderConfig holds configuration for the buildkit builder container.
 type BuilderConfig struct {
+	// Context is the explicit general Docker context override; platform mappings take precedence.
+	Context string
 	// Name is the container name for the buildkit builder (e.g., "linuxkit-builder-alice").
 	Name string
 	// Image is the container image to run (e.g., "moby/buildkit:v0.26.3").
