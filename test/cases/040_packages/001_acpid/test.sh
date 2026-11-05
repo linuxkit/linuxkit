@@ -1,9 +1,19 @@
 #!/bin/sh
-# Exercise the packaged handler in an isolated container PID namespace.
-# Usage: ./test-power-button.sh IMAGE
+# SUMMARY: Check that acpid dispatches power-button events to orderly poweroff
+# LABELS:
+# Usage: ./test.sh [IMAGE]
 set -eu
 
-image=${1:?Usage: test-power-button.sh IMAGE}
+[ "$#" -le 1 ] || { echo "Usage: $0 [IMAGE]" >&2; exit 1; }
+case "$(docker info --format '{{.Architecture}}')" in
+    aarch64|arm64|x86_64|amd64) ;;
+    *) echo "SKIP: fixture requires a 64-bit little-endian Docker host"; exit 253 ;;
+esac
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../../.." && pwd)
+image=${1:-}
+if [ -z "$image" ]; then
+    image=$(docker build --quiet "$repo/pkg/acpid")
+fi
 fixture=$(mktemp -d)
 trap 'rm -rf "$fixture"' EXIT HUP INT TERM
 mkdir "$fixture/input"

@@ -102,6 +102,20 @@ device. The ARM64 kernel needs `CONFIG_GPIO_PL061=y`,
 `CONFIG_KEYBOARD_GPIO=y`, and `CONFIG_INPUT_EVDEV=y`.
 The guest must also run the [`acpid` package](../pkg/acpid), whose BusyBox
 event handler invokes `poweroff` to request an orderly shutdown from init.
+BusyBox acpid executes `/etc/acpi/PWRF/00000080` for this event. The handler
+invokes `/sbin/poweroff` by its applet name so BusyBox selects the shutdown
+operation. A symlink from `00000080` to the BusyBox binary would use the
+unrecognized applet name `00000080`.
+
+Run the package event-dispatch regression test from the repository root:
+
+```sh
+./test/cases/040_packages/001_acpid/test.sh
+```
+
+The test builds the local acpid package and injects an input event inside a
+private container PID namespace. An optional image argument tests an already
+built package. It does not pass host input devices into the container.
 An example of including the service is available in the
 [Docker for Mac example](../examples/docker-for-mac.yml).
 
