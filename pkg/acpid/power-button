@@ -1,0 +1,5 @@
+#!/bin/sh
+# BusyBox acpid maps EV_KEY/KEY_POWER presses to PWRF/00000080.
+# acpid executes this event path with no shell command parsing.
+# Invoke the BusyBox applet by its poweroff name to signal guest init.
+exec /sbin/poweroff
