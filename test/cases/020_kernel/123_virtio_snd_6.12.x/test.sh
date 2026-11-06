@@ -13,7 +13,7 @@ case "$(uname -m)" in
 esac
 
 # Resolve the same candidate tag used by the kernel Makefile unless a local override is supplied.
-KERNEL_IMAGE="${LINUXKIT_SOUND_KERNEL:-$(make -s -C "${RT_PROJECT_ROOT}/../../kernel" ARCH=arm64 tag-plainkernel-6.12.59)}"
+KERNEL_IMAGE="${LINUXKIT_SOUND_KERNEL:-$(make -s -C "${RT_PROJECT_ROOT}/../../kernel" ARCH=arm64 tag-plainkernel-6.12.115)}"
 case "${KERNEL_IMAGE}" in
     ''|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:/@-]*)
         echo "Invalid LINUXKIT_SOUND_KERNEL image reference" >&2
@@ -33,7 +33,7 @@ trap cleanup EXIT
 
 docker build -t "${IMAGE_NAME}" .
 sed \
-    -e "s|linuxkit/kernel:6.12.59|${KERNEL_IMAGE}|" \
+    -e "s|linuxkit/kernel:6.12.115|${KERNEL_IMAGE}|" \
     -e "s|linuxkit-virtio-snd-test|${IMAGE_NAME}|" \
     test.yml > "${WORK_DIR}/test.yml"
 linuxkit build --docker --format kernel+initrd --dir "${WORK_DIR}" --name "${NAME}" "${WORK_DIR}/test.yml"

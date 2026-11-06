@@ -88,9 +88,9 @@ The recording container does not need permission to load kernel modules.
 
 The test in `test/cases/020_kernel/123_virtio_snd_6.12.x` checks module packaging and dependency loading without a virtio-sound device; `/proc/asound/cards` can remain empty.
 The test runs on an aarch64 host and requires a kernel image built from the candidate configuration.
-Build the plain 6.12.59 kernel package before running the kernel test suite:
+Build the plain 6.12.115 kernel package before running the kernel test suite:
 ```
-make -C kernel ARCH=arm64 buildplainkernel-6.12.59
+make -C kernel ARCH=arm64 buildplainkernel-6.12.115
 make test TEST_SUITE=linuxkit.kernel
 ```
 The test derives the candidate image tag from the kernel Makefile; set `LINUXKIT_SOUND_KERNEL` only to override that tag for a local build.
