@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:6.12.59
+  image: linuxkit/kernel:6.18.60
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 root=/dev/vda"
 init:
   - linuxkit/init:075ff447b68e23feef95589c90010a039533e5b5
