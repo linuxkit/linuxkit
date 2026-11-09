@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	stdlog "log"
+	"strings"
 
 	ggcrlog "github.com/google/go-containerregistry/pkg/logs"
 	log "github.com/sirupsen/logrus"
@@ -58,6 +59,18 @@ func SetupLogging(quiet bool, verbose int, verboseSet bool) error {
 	default:
 		return errors.New("verbose flag can only be set to 0, 1, 2 or 3")
 	}
-	ggcrlog.Progress = stdlog.New(log.StandardLogger().WriterLevel(log.InfoLevel), "", 0)
+	// Keep completion events synchronous so an interactive display can account
+	// for them before restoring its formatter/output at the end of a push.
+	ggcrlog.Progress = stdlog.New(ggcrProgressWriter{}, "", 0)
 	return nil
+}
+
+// GGCRProgressField identifies progress events without inspecting formatted logs.
+const GGCRProgressField = "ggcr_progress"
+
+type ggcrProgressWriter struct{}
+
+func (ggcrProgressWriter) Write(p []byte) (int, error) {
+	log.WithField(GGCRProgressField, true).Info(strings.TrimSuffix(string(p), "\n"))
+	return len(p), nil
 }

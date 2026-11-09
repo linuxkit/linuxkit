@@ -171,3 +171,37 @@ func TestValidatePushContentsOpenError(t *testing.T) {
 	require.ErrorIs(t, err, os.ErrPermission)
 	require.Contains(t, err.Error(), "cannot open cache blob")
 }
+
+func TestValidatePushContentsTree(t *testing.T) {
+	f := newPushFixture(t)
+	require.NoError(t, os.Remove(f.path(f.attestationLayer)))
+	err := f.p.validatePushContents("example.test/kernel:test")
+	require.ErrorIs(t, err, os.ErrNotExist)
+	output := err.Error()
+	require.Contains(t, output, f.root.Digest.String()+" root index [incomplete]")
+	require.Contains(t, output, "|-- "+f.nested.Digest.String()+" manifests[0] nested index [incomplete]")
+	require.Contains(t, output, "|   |-- "+f.image.Digest.String()+" manifests[0] image manifest [complete] platform linux/arm64")
+	require.Contains(t, output, "|   |   |-- "+f.config.Digest.String()+" config [complete]")
+	require.Contains(t, output, "|   |   `-- "+f.layer.Digest.String()+" layers[0] [complete]")
+	require.Contains(t, output, "|   `-- "+f.attestation.Digest.String()+" manifests[1] image manifest [incomplete] platform unknown/unknown")
+	require.Contains(t, output, "|       `-- "+f.attestationLayer.Digest.String()+" layers[0] [MISSING]")
+	require.Contains(t, output, "`-- "+f.nested.Digest.String()+" manifests[2] nested index [incomplete]")
+	require.Contains(t, output, "shared subtree shown above")
+	require.NotContains(t, output, "\x1b")
+	require.NotContains(t, output, " -> ")
+	require.NotContains(t, output, "NOT CHECKED")                                  // Missing leaf has no hidden descendants.
+	require.Equal(t, 1, strings.Count(output, f.attestationLayer.Digest.String())) // Shared subtree is expanded once.
+}
+
+func TestValidatePushContentsMissingIndexTree(t *testing.T) {
+	f := newPushFixture(t)
+	require.NoError(t, os.Remove(f.path(f.nested)))
+	err := f.p.validatePushContents("example.test/kernel:test")
+	require.ErrorIs(t, err, os.ErrNotExist)
+	require.Contains(t, err.Error(), f.nested.Digest.String()+" manifests[0] nested index [MISSING]")
+	require.Contains(t, err.Error(), "descendants: NOT CHECKED (references unavailable)")
+	// Independent siblings are still checked and displayed.
+	require.Contains(t, err.Error(), f.image.Digest.String()+" manifests[1] image manifest [complete]")
+	require.Contains(t, err.Error(), f.config.Digest.String()+" config [complete]")
+	require.NotContains(t, err.Error(), f.attestation.Digest.String())
+}
