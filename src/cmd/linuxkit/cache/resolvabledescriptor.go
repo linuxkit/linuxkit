@@ -50,23 +50,40 @@ func (l layoutIndex) Digest() (v1.Hash, error) {
 // FindRoot find the root ResolvableDescriptor, representing an Image or Index, for
 // a given imageName.
 func (p *Provider) FindRoot(imageName string) (ResolvableDescriptor, error) {
-	matcher := match.Name(imageName)
-	rootIndex, err := p.Index()
-	// of there is no root index, we are broken
+	rootIndex, desc, err := p.rootDescriptor(imageName)
 	if err != nil {
-		return nil, fmt.Errorf("invalid image cache: %v", err)
+		return nil, err
 	}
+	switch {
+	case desc.MediaType.IsImage():
+		img, err := rootIndex.Image(desc.Digest)
+		if err != nil {
+			return nil, fmt.Errorf("resolving local image %s (%s): %w", imageName, desc.Digest, err)
+		}
+		return layoutImage{img: img}, nil
+	case desc.MediaType.IsIndex():
+		idx, err := rootIndex.ImageIndex(desc.Digest)
+		if err != nil {
+			return nil, fmt.Errorf("resolving local index %s (%s): %w", imageName, desc.Digest, err)
+		}
+		return layoutIndex{idx: idx}, nil
+	default:
+		return nil, fmt.Errorf("local reference %s (%s) has unsupported media type %s", imageName, desc.Digest, desc.MediaType)
+	}
+}
 
-	// first try the root tag as an image itself
-	images, err := partial.FindImages(rootIndex, matcher)
-	if err == nil && len(images) > 0 {
-		// if we found the root tag as an image, just use it
-		return layoutImage{img: images[0]}, nil
+// rootDescriptor distinguishes an absent tag from a tag with unreadable content.
+func (p *Provider) rootDescriptor(imageName string) (v1.ImageIndex, *v1.Descriptor, error) {
+	rootIndex, err := p.Index()
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading cache index for %s: %w", imageName, err)
 	}
-	// we did not find the root tag as an image, it is an index, get the index
-	indexes, err := partial.FindIndexes(rootIndex, matcher)
-	if err == nil && len(indexes) >= 1 {
-		return layoutIndex{idx: indexes[0]}, nil
+	descs, err := partial.FindManifests(rootIndex, match.Name(imageName))
+	if err != nil {
+		return nil, nil, fmt.Errorf("finding local reference %s: %w", imageName, err)
 	}
-	return nil, fmt.Errorf("could not find image or index for %s", imageName)
+	if len(descs) == 0 {
+		return nil, nil, fmt.Errorf("reference %s is not present in cache index", imageName)
+	}
+	return rootIndex, &descs[0], nil
 }

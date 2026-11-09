@@ -48,6 +48,12 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 
 	// if we made it this far, either we had a specific override, or we do not have the image remotely
 
+	// Check the local closure before merging remote content or starting uploads.
+	// Remote-only descriptors retained by AppendIndex need not exist locally.
+	if err := p.validatePushContents(name); err != nil {
+		return err
+	}
+
 	// do we even have the given one?
 	root, err := p.FindRoot(name)
 	if err != nil {
@@ -72,7 +78,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		}
 		log.Debugf("pushing image %s as %s", name, remoteName)
 		if err := remote.Write(ref, img, options...); err != nil {
-			return err
+			return fmt.Errorf("uploading local image %s to %s: %w", name, remoteName, err)
 		}
 		fmt.Printf("Pushed image %s\n", name)
 	case err2 == nil:
@@ -112,7 +118,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		log.Debugf("pushing local index %s as %s", name, remoteName)
 		// this is an index, so we not only want to write the index, but tags for each arch-specific image in it
 		if err := remote.WriteIndex(ref, ii, options...); err != nil {
-			return err
+			return fmt.Errorf("uploading local index %s to %s: %w", name, remoteName, err)
 		}
 		fmt.Printf("Pushed index %s\n", name)
 		if withArchSpecificTags {
