@@ -5,8 +5,8 @@
 # Each kernel is pushed to hub twice:
 # - linuxkit/kernel:<kernel>.<major>.<minor>-<hash>
 # - linuxkit/kernel:<kernel>.<major>.<minor>
-# The <hash> is the git tree hash of the current directory. The build
-# will only rebuild the kernel image if the git tree hash changed.
+# The <hash> combines common files, the series directory, and build recipes.
+# Operational Makefile changes do not affect it.
 #
 # For some kernels we also build a separate package containing the perf utility
 # which is specific to a given kernel. perf packages are tagged the same way
@@ -32,12 +32,21 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 # These are combined with series-specific folders to compute per-series hashes
 COMMON_DIR=common
 
-# Compute hash for shared files from above and include Makefile from current dir
-SHARED_HASH:=$(shell git ls-tree -r --full-tree $(HASH_COMMIT) -- $(CURDIR)/Makefile $(CURDIR)/$(COMMON_DIR) 2>/dev/null | git hash-object --stdin)
+# Define artifact-affecting command/arguments once for hashing and execution.
+# Platform, force, and generated tags stay outside the hash: architectures share
+# a series tag, and operational flags must not invalidate it.
+BUILD_COMMAND=linuxkit pkg build .
+kernel_build_args=--build-yml ./$(COMMON_DIR)/build-kernel.yml --build-arg-file $(1)/build-args
+debug_build_args=$(call kernel_build_args,$(1)) --build-arg-file $(COMMON_DIR)/build-args-debug
+tool_build_args=--build-yml ./$(COMMON_DIR)/build-$(1).yml --build-arg-file $(2)/build-args
 
-# Function to compute per-series hash: combines shared files hash with series folder hash
+# Hash committed common files, excluding the orchestration Makefile.
+SHARED_HASH:=$(shell git ls-tree -r --full-tree $(HASH_COMMIT) -- $(CURDIR)/$(COMMON_DIR) 2>/dev/null | git hash-object --stdin)
+
+# All variants retain one hash per series. Include their expanded recipes so a
+# build command/argument change invalidates the hash without hashing Makefile.
 # Usage: $(call series_hash,6.12.x)
-series_hash=$(shell (echo $(SHARED_HASH); git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR)/$(1) 2>/dev/null) | git hash-object --stdin)$(DIRTY)
+series_hash=$(shell (printf '%s\n' '$(SHARED_HASH)' '$(strip $(BUILD_COMMAND))' '$(strip $(call kernel_build_args,$(1)))' '$(strip $(call debug_build_args,$(1)))' $(foreach tool,$(TOOLS),'$(strip $(call tool_build_args,$(tool),$(1)))'); git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR)/$(1) 2>/dev/null) | git hash-object --stdin)$(DIRTY)
 
 REPO_ROOT:=$(shell git rev-parse --show-toplevel)
 
@@ -131,12 +140,12 @@ buildkerneldeps-%: $(COMMON_DIR)/Dockerfile Makefile $(wildcard patches-$(call s
 buildplainkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
+	$(BUILD_COMMAND) $(FORCE) --platforms $(BUILD_PLATFORM) $(call kernel_build_args,$(KERNEL_SERIES)) --hash $(SERIES_HASH) --tag "$*-{{.Hash}}"
 
 builddebugkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file $(COMMON_DIR)/build-args-debug
+	$(BUILD_COMMAND) $(FORCE) --platforms $(BUILD_PLATFORM) $(call debug_build_args,$(KERNEL_SERIES)) --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}"
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
@@ -178,7 +187,7 @@ buildtool-%:
 	$(eval KERNEL_VERSION=$(call toolkernel,$*))
 	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --hash $(SERIES_HASH) --tag "$(KERNEL_VERSION)-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args
+	$(BUILD_COMMAND) $(FORCE) --platforms $(BUILD_PLATFORM) $(call tool_build_args,$(TOOL),$(KERNEL_SERIES)) --hash $(SERIES_HASH) --tag "$(KERNEL_VERSION)-{{.Hash}}"
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
