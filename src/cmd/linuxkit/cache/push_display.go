@@ -3,6 +3,7 @@ package cache
 import (
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -154,7 +155,7 @@ func plainPushStatus(label string, state pushProgress, observer *pushObserver) s
 			pending++
 		}
 	}
-	return fmt.Sprintf("%s: %s; %s/s; %d pending, %d done", label, state.summary(), formatPushBytes(rate), pending, done)
+	return fmt.Sprintf("%s: %s; %s/s; ETA %s; %d pending, %d done", label, state.summary(), formatPushBytes(rate), estimatePushRemaining(rows, state, rate, time.Now()), pending, done)
 }
 
 // Only one interactive display can own the process logger at a time. A second
@@ -303,6 +304,39 @@ func formatPushBytes(n float64) string {
 	}
 	return fmt.Sprintf("%.0fB", n)
 }
+
+// Estimate the remaining client-side transfer using the same aggregate rate
+// shown in the summary. Existing content and shared digests count only once;
+// retries reset their artifact's read count and thus increase remaining work.
+// Registry acknowledgement time cannot be inferred from byte throughput.
+func estimatePushRemaining(rows []blobRow, state pushProgress, rate float64, now time.Time) string {
+	if len(rows) == 0 {
+		return "--"
+	}
+	done := true
+	for _, row := range rows {
+		done = done && completedBlob(row.phase)
+	}
+	if done {
+		return "0s"
+	}
+	if !state.finished.IsZero() {
+		return "--"
+	}
+	complete, total := pushTreeTotals(rows)
+	if complete == total {
+		return "waiting"
+	}
+	if rate <= 0 || math.IsNaN(rate) || math.IsInf(rate, 0) || now.Sub(state.lastChange) >= 30*time.Second {
+		return "--"
+	}
+	seconds := math.Ceil(float64(total-complete) / rate)
+	if seconds >= float64(int64(^uint64(0)>>1)/int64(time.Second)) {
+		return "--"
+	}
+	return (time.Duration(seconds) * time.Second).String()
+}
+
 func clipPushLine(line string, width int) string {
 	if width < 1 {
 		return ""
@@ -331,7 +365,7 @@ func renderPushFrame(label string, state pushProgress, rows []blobRow, rate floa
 		end = time.Now()
 	}
 	complete, total := pushTreeTotals(rows)
-	lines := []string{label, fmt.Sprintf("Total %s/%s | %s/s | elapsed %s | idle %s", formatPushBytes(float64(complete)), formatPushBytes(float64(total)), formatPushBytes(rate), end.Sub(state.started).Round(time.Second), end.Sub(state.lastChange).Round(time.Second))}
+	lines := []string{label, fmt.Sprintf("Total %s/%s | ETA %s | %s/s | elapsed %s | idle %s", formatPushBytes(float64(complete)), formatPushBytes(float64(total)), estimatePushRemaining(rows, state, rate, end), formatPushBytes(rate), end.Sub(state.started).Round(time.Second), end.Sub(state.lastChange).Round(time.Second))}
 	nameWidth := 12
 	for _, row := range rows {
 		nameWidth = max(nameWidth, len(pushTreeName(row)))
