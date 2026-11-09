@@ -1,6 +1,7 @@
 *.log
 Dockerfile.media
 /bin
+tmp/
 *.swp
 *.img
 *.tag
