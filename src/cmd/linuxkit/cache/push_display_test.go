@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -73,6 +74,7 @@ func TestRenderPushFrame(t *testing.T) {
 	require.Contains(t, frame, "aaaaaaaaaaaa")
 	require.Contains(t, frame, "8.0MiB/100.0MiB")
 	require.Contains(t, frame, "800.0KiB/s")
+	require.Contains(t, frame, "ETA 1m58s")
 	require.Contains(t, frame, "send #1")
 	require.Contains(t, frame, "[")
 	for _, line := range strings.Split(strings.TrimSuffix(frame, "\n"), "\n") {
@@ -145,6 +147,7 @@ func TestPlainPushStatusIsCompact(t *testing.T) {
 	observer.start(digest, 100)
 	message := plainPushStatus("upload", pushProgress{started: now, lastChange: now}, observer)
 	require.Contains(t, message, "1 pending")
+	require.Contains(t, message, "ETA --")
 	require.NotContains(t, message, digest.String())
 	require.NotContains(t, message, "\x1b")
 }
@@ -217,4 +220,56 @@ func TestPlainDisplayKeepsCompletionMessages(t *testing.T) {
 	message := "existing blob: " + f.layer.Digest.String()
 	log.WithField(util.GGCRProgressField, true).Info(message)
 	require.Contains(t, output.String(), message)
+}
+
+func TestEstimatePushRemaining(t *testing.T) {
+	now := time.Now()
+	state := pushProgress{started: now.Add(-time.Minute), lastChange: now}
+	row := func(digest string, size, read int64, phase string) blobRow {
+		return blobRow{digest: v1.Hash{Algorithm: "sha256", Hex: digest}, blobUpload: blobUpload{size: size, read: read, phase: phase}}
+	}
+	active := row("active", 1000, 250, "sending")
+	existing := row("existing", 5000, 5000, "exists")
+	cases := []struct {
+		name string
+		rows []blobRow
+		rate float64
+		want string
+	}{
+		{"transfer", []blobRow{active}, 100, "8s"}, // Round up fractional seconds.
+		{"faster", []blobRow{active}, 250, "3s"},
+		{"existing and shared", []blobRow{existing, active, active}, 100, "8s"},
+		{"queued included", []blobRow{active, row("queued", 1000, 0, "queued")}, 100, "18s"},
+		{"retry resets progress", []blobRow{row("active", 1000, 0, "sending")}, 100, "10s"},
+		{"no observations", nil, 100, "--"},
+		{"no rate", []blobRow{active}, 0, "--"},
+		{"negative rate", []blobRow{active}, -1, "--"},
+		{"invalid rate", []blobRow{active}, math.NaN(), "--"},
+		{"infinite rate", []blobRow{active}, math.Inf(1), "--"},
+		{"duration overflow", []blobRow{active}, math.SmallestNonzeroFloat64, "--"},
+		{"awaiting acknowledgement", []blobRow{row("active", 1000, 1000, "waiting for registry")}, 100, "waiting"},
+		{"zero-byte pending", []blobRow{row("empty", 0, 0, "queued")}, 0, "waiting"},
+		{"complete", []blobRow{existing}, 0, "0s"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, estimatePushRemaining(tc.rows, state, tc.rate, now))
+		})
+	}
+	stalled := state
+	stalled.lastChange = now.Add(-30 * time.Second)
+	require.Equal(t, "--", estimatePushRemaining([]blobRow{active}, stalled, 100, now))
+	failed := state
+	failed.finished = now
+	require.Equal(t, "--", estimatePushRemaining([]blobRow{active}, failed, 100, now))
+}
+
+func TestPushETAVisibleInNormalTerminal(t *testing.T) {
+	now := time.Now()
+	rows := []blobRow{{digest: v1.Hash{Algorithm: "sha256", Hex: "abc"}, blobUpload: blobUpload{size: 1000, read: 250, phase: "sending"}}}
+	frame := renderPushFrame("upload", pushProgress{started: now.Add(-time.Minute), lastChange: now}, rows, 100, 80, 24)
+	require.Contains(t, strings.Split(frame, "\n")[1], "ETA 8s")
+	for _, line := range strings.Split(strings.TrimSuffix(frame, "\n"), "\n") {
+		require.LessOrEqual(t, len(line), 79)
+	}
 }
