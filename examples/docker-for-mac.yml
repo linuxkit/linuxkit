@@ -49,7 +49,7 @@ onboot:
 services:
   # Enable acpi to shutdown on power events
   - name: acpid
-    image: linuxkit/acpid:dbd30b25903bf17042c22171b729f94c4bd3d98d
+    image: linuxkit/acpid:a42051685d709b1007ff3138f19f8e01d33b4c44
   # Enable getty for easier debugging
   - name: getty
     image: linuxkit/getty:a86d74c8f89be8956330c3b115b0b1f2e09ef6e0

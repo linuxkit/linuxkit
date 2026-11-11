@@ -1,40 +1,69 @@
 #!/bin/sh
-# SUMMARY: Check that acpid dispatches power-button events to orderly poweroff
+# SUMMARY: Check that the acpid power-button handler shuts down a LinuxKit guest
 # LABELS:
-# Usage: ./test.sh [IMAGE]
+# REPEAT:
 set -eu
 
-[ "$#" -le 1 ] || { echo "Usage: $0 [IMAGE]" >&2; exit 1; }
-case "$(docker info --format '{{.Architecture}}')" in
-    aarch64|arm64|x86_64|amd64) ;;
-    *) echo "SKIP: fixture requires a 64-bit little-endian Docker host"; exit 253 ;;
+. "${RT_PROJECT_ROOT}/_lib/lib.sh"
+
+case "$(uname -m)" in
+    aarch64|arm64|x86_64) ;;
+    *) echo "SKIP: input_event fixture requires amd64 or arm64"; exit "$RT_CANCEL" ;;
 esac
-repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../../.." && pwd)
-image=${1:-}
-if [ -z "$image" ]; then
-    image=$(docker build --quiet "$repo/pkg/acpid")
+
+cd "$(dirname "$0")"
+WORK_DIR=$(mktemp -d)
+runner=
+watchdog=
+stop_vm() {
+    # QEMU is a child of the runner and does not receive its signals.
+    if [ -s "$WORK_DIR/state/qemu.pid" ]; then
+        qemu_pid=$(cat "$WORK_DIR/state/qemu.pid")
+        kill -TERM "$qemu_pid" 2>/dev/null || true
+    fi
+    kill -TERM "$runner" 2>/dev/null || true
+    sleep 1
+    kill -TERM "$runner" 2>/dev/null || true
+}
+cleanup() {
+    if [ -n "$watchdog" ]; then
+        kill "$watchdog" 2>/dev/null || true
+        wait "$watchdog" 2>/dev/null || true
+    fi
+    if [ -n "$runner" ]; then
+        stop_vm
+        wait "$runner" 2>/dev/null || true
+    fi
+    rm -rf "$WORK_DIR"
+}
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+
+linuxkit build --format kernel+initrd --dir "$WORK_DIR" --name acpid test.yml
+linuxkit run qemu --kernel --networking none --mem 2048 --state "$WORK_DIR/state" "$WORK_DIR/acpid" > "$WORK_DIR/run.log" 2>&1 &
+runner=$!
+(
+    for attempt in $(seq 1 120); do
+        kill -0 "$runner" 2>/dev/null || exit 0
+        sleep 1
+    done
+    : > "$WORK_DIR/timed-out"
+    stop_vm
+) &
+watchdog=$!
+status=0
+wait "$runner" || status=$?
+runner=
+kill "$watchdog" 2>/dev/null || true
+wait "$watchdog" 2>/dev/null || true
+watchdog=
+cat "$WORK_DIR/run.log"
+
+if [ -e "$WORK_DIR/timed-out" ] || [ "$status" -ne 0 ]; then
+    echo "acpid test suite FAILED: guest did not exit normally" >&2
+    exit 1
 fi
-fixture=$(mktemp -d)
-trap 'rm -rf "$fixture"' EXIT HUP INT TERM
-mkdir "$fixture/input"
-
-# 64-bit Linux input_event: zero timeval, EV_KEY, KEY_POWER, press.
-printf '\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\001\000\164\000\001\000\000\000' > "$fixture/input/event0"
-
-# Keep the default private PID namespace. Never use --pid=host here.
-# BusyBox poweroff sends SIGUSR2 to this shell (PID 1), standing in for init.
-docker run --rm --network none --read-only --cap-drop ALL \
-    --tmpfs /run \
-    --mount "type=bind,src=$fixture/input,dst=/dev/input,readonly" \
-    --entrypoint /bin/sh "$image" -c '
-        set -eu
-        trap '\''echo "PASS: power button requested orderly poweroff"; exit 0'\'' USR2
-        test -x /etc/acpi/PWRF/00000080
-        test "$(stat -c "%u:%g:%a" /etc/acpi/PWRF/00000080)" = "0:0:755"
-        /sbin/acpid -f -d &
-        for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            sleep 1
-        done
-        echo "FAIL: no orderly poweroff request" >&2
-        exit 1
-    '
+grep -q 'ACPID_TEST_EVENT_READY' "$WORK_DIR/run.log"
+grep -q 'acpid: PWRF/00000080' "$WORK_DIR/run.log"
+grep -q 'Requesting system poweroff' "$WORK_DIR/run.log"
+echo "acpid test suite PASSED"

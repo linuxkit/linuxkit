@@ -110,12 +110,18 @@ unrecognized applet name `00000080`.
 Run the package event-dispatch regression test from the repository root:
 
 ```sh
-./test/cases/040_packages/001_acpid/test.sh
+RT_PROJECT_ROOT="$PWD/test/cases" RT_LIB=/dev/null \
+  ./test/cases/040_packages/001_acpid/test.sh
 ```
 
-The test builds the local acpid package and injects an input event inside a
-private container PID namespace. An optional image argument tests an already
-built package. It does not pass host input devices into the container.
+The test builds a LinuxKit OS image with the published acpid package and boots it with QEMU.
+Inside the guest, it checks the handler's ownership and permissions and feeds
+a binary power-button event to acpid through a private FIFO. The handler
+signals the guest's real init, and the host test checks event dispatch and
+completed guest poweroff. A timeout or nonzero VM exit fails the test.
+The input-event fixture supports amd64 and arm64 guests.
+The test does not use host input devices or exercise the VZ GPIO controller;
+the platform-specific power-button path needs the separate VZ check below.
 An example of including the service is available in the
 [Docker for Mac example](../examples/docker-for-mac.yml).
 

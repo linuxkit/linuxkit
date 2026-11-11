@@ -1,0 +1,16 @@
+kernel:
+  image: linuxkit/kernel:6.18.60
+  cmdline: "console=ttyS0 console=ttyAMA0 console=hvc0 linuxkit.runc_console=1"
+init:
+  - linuxkit/init:075ff447b68e23feef95589c90010a039533e5b5
+  - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
+onboot:
+  - name: acpid-test
+    image: linuxkit/acpid:a42051685d709b1007ff3138f19f8e01d33b4c44
+    pid: host
+    binds:
+      - /check.sh:/check.sh:ro
+    command: ["/bin/sh", "/check.sh"]
+files:
+  - path: check.sh
+    source: ./check.sh
