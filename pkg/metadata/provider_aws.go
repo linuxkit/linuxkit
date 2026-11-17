@@ -90,15 +90,61 @@ func awsMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	}
 }
 
+// awsTokenURL is the IMDSv2 session token endpoint (a var so tests can override it)
+var awsTokenURL = "http://169.254.169.254/latest/api/token"
+
+// IMDSv2 token state, fetched once per run: this process is one-shot, so no refresh is needed
+var (
+	awsTokenFetched bool
+	awsToken        string
+	awsTokenErr     error
+)
+
+// awsFetchToken requests an IMDSv2 token. A non-200 response leaves the token
+// empty (IMDSv1 fallback); no response at all means there is no metadata service.
+func awsFetchToken(client *http.Client) (string, error) {
+	req, err := http.NewRequest(http.MethodPut, awsTokenURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("AWS: http.NewRequest failed: %s", err)
+	}
+	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("AWS: Could not contact metadata service: %s", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Printf("AWS: IMDSv2 token request returned %d, falling back to IMDSv1", resp.StatusCode)
+		return "", nil
+	}
+	token, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("AWS: Failed to read IMDSv2 token: %s", err)
+	}
+	log.Printf("AWS: Using IMDSv2")
+	return string(token), nil
+}
+
 // awsGet requests and extracts the requested URL
 func awsGet(url string) ([]byte, error) {
 	var client = &http.Client{
 		Timeout: time.Second * 2,
 	}
 
+	if !awsTokenFetched {
+		awsToken, awsTokenErr = awsFetchToken(client)
+		awsTokenFetched = true
+	}
+	if awsTokenErr != nil {
+		return nil, awsTokenErr
+	}
+
 	req, err := http.NewRequest("", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: http.NewRequest failed: %s", err)
+	}
+	if awsToken != "" {
+		req.Header.Set("X-aws-ec2-metadata-token", awsToken)
 	}
 
 	resp, err := client.Do(req)

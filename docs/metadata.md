@@ -116,6 +116,9 @@ hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
 AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
 and made available in `/run/config/userdata`.
 
+Requests use IMDSv2 session tokens, falling back to IMDSv1 if the token
+request is rejected.
+
 ## Hetzner
 
 Hetzner metadata is reached via the following URL
