@@ -118,7 +118,9 @@ and made available in `/run/config/userdata`.
 
 Requests use IMDSv2 session tokens, falling back to IMDSv1 if the token
 request is rejected. Requests that get no response at all (e.g. IMDS not yet
-answering early in boot) are retried up to 3 times in total, 1s and 2s apart.
+answering early in boot) are retried with backoff for up to 30s, so a host
+that probes AWS without having it may wait that long; name the provider
+explicitly (e.g. `metadata aws`) to avoid probing the others.
 
 ## Hetzner
 

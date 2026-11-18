@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -60,10 +61,24 @@ func fakeIMDS(t *testing.T, tokenStatus int, requireToken bool, dropPuts, dropGe
 	srv.Config.SetKeepAlivesEnabled(false)
 	awsTokenURL = srv.URL + "/latest/api/token"
 	awsTokenFetched, awsToken, awsTokenErr = false, "", nil
-	delays := awsRetryDelays
-	awsRetryDelays = []time.Duration{time.Millisecond, time.Millisecond}
-	t.Cleanup(func() { awsRetryDelays = delays; srv.Close() })
+	// fake clock: only the recorded sleeps advance it
+	now, sleep := awsNow, awsSleep
+	clock := time.Unix(0, 0)
+	sleeps = nil
+	awsNow = func() time.Time { return clock }
+	awsSleep = func(d time.Duration) { sleeps = append(sleeps, d); clock = clock.Add(d) }
+	t.Cleanup(func() { awsNow, awsSleep = now, sleep; srv.Close() })
 	return srv, &puts, &gets
+}
+
+// sleeps records the retry sleeps since the last fakeIMDS
+var sleeps []time.Duration
+
+func checkSleeps(t *testing.T, want ...time.Duration) {
+	t.Helper()
+	if !reflect.DeepEqual(sleeps, want) {
+		t.Fatalf("want sleeps %v, got %v", want, sleeps)
+	}
 }
 
 func TestAWSGetIMDSv2(t *testing.T) {
@@ -89,6 +104,7 @@ func TestAWSGetIMDSv1Fallback(t *testing.T) {
 		if *puts != 1 {
 			t.Fatalf("status %d: want 1 PUT, got %d", status, *puts)
 		}
+		checkSleeps(t)
 	}
 }
 
@@ -106,24 +122,28 @@ func TestAWSGetUnreachable(t *testing.T) {
 }
 
 func TestAWSTokenRetry(t *testing.T) {
-	srv, puts, gets := fakeIMDS(t, 200, true, 1, 0)
+	srv, puts, gets := fakeIMDS(t, 200, true, 3, 0)
 	body, err := awsGet(srv.URL + "/latest/meta-data/hostname")
 	if err != nil || string(body) != "ok" {
 		t.Fatalf("awsGet: %q, %v", body, err)
 	}
-	if *puts != 2 || *gets != 1 {
-		t.Fatalf("want 2 PUTs and 1 GET, got %d and %d", *puts, *gets)
+	if *puts != 4 || *gets != 1 {
+		t.Fatalf("want 4 PUTs and 1 GET, got %d and %d", *puts, *gets)
 	}
+	checkSleeps(t, time.Second, 2*time.Second, 4*time.Second)
 }
 
-func TestAWSTokenRetryExhausted(t *testing.T) {
-	srv, puts, gets := fakeIMDS(t, 200, false, 3, 0)
+func TestAWSTokenRetryDeadline(t *testing.T) {
+	srv, puts, gets := fakeIMDS(t, 200, false, 1000, 0)
 	if _, err := awsGet(srv.URL + "/latest/meta-data/hostname"); err == nil {
 		t.Fatal("awsGet succeeded with all token PUTs dropped")
 	}
-	if *puts != 3 || *gets != 0 {
-		t.Fatalf("want 3 PUTs and no GETs, got %d and %d", *puts, *gets)
+	if *puts != 9 || *gets != 0 {
+		t.Fatalf("want 9 PUTs and no GETs, got %d and %d", *puts, *gets)
 	}
+	s := time.Second
+	// 1+2+4+5*4 = 27s, then the last sleep is clamped to the 3s left
+	checkSleeps(t, s, 2*s, 4*s, 5*s, 5*s, 5*s, 5*s, 3*s)
 }
 
 func TestAWSGetRetry(t *testing.T) {
@@ -135,6 +155,7 @@ func TestAWSGetRetry(t *testing.T) {
 	if *gets != 2 {
 		t.Fatalf("want 2 GETs, got %d", *gets)
 	}
+	checkSleeps(t, time.Second)
 }
 
 func TestAWSGetNotFoundNoRetry(t *testing.T) {
@@ -145,4 +166,5 @@ func TestAWSGetNotFoundNoRetry(t *testing.T) {
 	if *gets != 1 {
 		t.Fatalf("want 1 GET, got %d", *gets)
 	}
+	checkSleeps(t)
 }

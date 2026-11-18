@@ -104,19 +104,35 @@ var (
 	awsTokenErr     error
 )
 
-// awsRetryDelays are the sleeps between attempts after a network-level failure
-// (a var so tests can shorten it); HTTP error statuses are never retried
-var awsRetryDelays = []time.Duration{1 * time.Second, 2 * time.Second}
+// Network-level failures (no HTTP response) are retried until awsRetryDeadline
+// after the first attempt, sleeping awsRetryBackoff between attempts (the last
+// entry repeats). HTTP error statuses are never retried. Vars so tests can fake time.
+var (
+	awsRetryDeadline = 30 * time.Second
+	awsRetryBackoff  = []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second, 5 * time.Second}
+	awsNow           = time.Now
+	awsSleep         = time.Sleep
+)
 
 // awsDo sends req, retrying network-level failures; req must have no body
 func awsDo(client *http.Client, what string, req *http.Request) (*http.Response, error) {
-	for i := 0; ; i++ {
+	start := awsNow()
+	for attempt := 1; ; attempt++ {
 		resp, err := client.Do(req)
-		if err == nil || i == len(awsRetryDelays) {
+		left := awsRetryDeadline - awsNow().Sub(start)
+		if err == nil || left <= 0 {
 			return resp, err
 		}
-		log.Printf("AWS: %s attempt %d/%d failed: %s, retrying in %s", what, i+1, len(awsRetryDelays)+1, err, awsRetryDelays[i])
-		time.Sleep(awsRetryDelays[i])
+		delay := awsRetryBackoff[len(awsRetryBackoff)-1]
+		if attempt < len(awsRetryBackoff) {
+			delay = awsRetryBackoff[attempt-1]
+		}
+		if delay > left {
+			delay = left
+		}
+		log.Printf("AWS: %s attempt %d failed: %s, retrying in %s (%s left)", what, attempt, err,
+			delay.Round(100*time.Millisecond), left.Round(100*time.Millisecond))
+		awsSleep(delay)
 	}
 }
 
