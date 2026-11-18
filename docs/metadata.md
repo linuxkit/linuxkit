@@ -117,7 +117,8 @@ AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
 and made available in `/run/config/userdata`.
 
 Requests use IMDSv2 session tokens, falling back to IMDSv1 if the token
-request is rejected.
+request is rejected. Requests that get no response at all (e.g. IMDS not yet
+answering early in boot) are retried up to 3 times in total, 1s and 2s apart.
 
 ## Hetzner
 

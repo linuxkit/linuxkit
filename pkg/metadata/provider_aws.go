@@ -27,6 +27,9 @@ func (p *ProviderAWS) String() string {
 func (p *ProviderAWS) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := awsGet(metaDataURL + "hostname")
+	if err != nil {
+		log.Printf("AWS: Probe failed: %s", err)
+	}
 	return err == nil
 }
 
@@ -100,6 +103,22 @@ var (
 	awsTokenErr     error
 )
 
+// awsRetryDelays are the sleeps between attempts after a network-level failure
+// (a var so tests can shorten it); HTTP error statuses are never retried
+var awsRetryDelays = []time.Duration{1 * time.Second, 2 * time.Second}
+
+// awsDo sends req, retrying network-level failures; req must have no body
+func awsDo(client *http.Client, what string, req *http.Request) (*http.Response, error) {
+	for i := 0; ; i++ {
+		resp, err := client.Do(req)
+		if err == nil || i == len(awsRetryDelays) {
+			return resp, err
+		}
+		log.Printf("AWS: %s attempt %d/%d failed: %s, retrying in %s", what, i+1, len(awsRetryDelays)+1, err, awsRetryDelays[i])
+		time.Sleep(awsRetryDelays[i])
+	}
+}
+
 // awsFetchToken requests an IMDSv2 token. A non-200 response leaves the token
 // empty (IMDSv1 fallback); no response at all means there is no metadata service.
 func awsFetchToken(client *http.Client) (string, error) {
@@ -108,7 +127,7 @@ func awsFetchToken(client *http.Client) (string, error) {
 		return "", fmt.Errorf("AWS: http.NewRequest failed: %s", err)
 	}
 	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
-	resp, err := client.Do(req)
+	resp, err := awsDo(client, "IMDSv2 token request", req)
 	if err != nil {
 		return "", fmt.Errorf("AWS: Could not contact metadata service: %s", err)
 	}
@@ -147,7 +166,7 @@ func awsGet(url string) ([]byte, error) {
 		req.Header.Set("X-aws-ec2-metadata-token", awsToken)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := awsDo(client, "GET "+url, req)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: Could not contact metadata service: %s", err)
 	}
