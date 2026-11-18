@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func (p *ProviderAWS) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := awsGet(metaDataURL + "hostname")
 	if err != nil {
-		log.Printf("AWS: Probe failed: %s", err)
+		log.Printf("AWS: Probe failed: %s", strings.TrimPrefix(err.Error(), "AWS: "))
 	}
 	return err == nil
 }
