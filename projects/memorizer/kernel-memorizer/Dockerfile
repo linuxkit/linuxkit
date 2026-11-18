@@ -39,14 +39,14 @@ ENV KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL
 COPY keys.asc keys.asc
 
 # Download and verify kernel
-RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
+RUN curl -k -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 -q --import keys.asc && \
     gpg2 --verify sha256sums.asc && \
     KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
-    curl -fsSLO ${KERNEL_SOURCE} && \
+    curl -k -fsSLO ${KERNEL_SOURCE} && \
     echo "${KERNEL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c - && \
     xz -d linux-${KERNEL_VERSION}.tar.xz && \
-    curl -fsSLO ${KERNEL_PGP2_SIGN} && \
+    curl -k -fsSLO ${KERNEL_PGP2_SIGN} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
