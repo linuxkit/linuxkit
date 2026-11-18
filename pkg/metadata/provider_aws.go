@@ -105,21 +105,25 @@ var (
 )
 
 // Network-level failures (no HTTP response) are retried until awsRetryDeadline
-// after the first attempt, sleeping awsRetryBackoff between attempts (the last
-// entry repeats). HTTP error statuses are never retried. Vars so tests can fake time.
+// after the first AWS request of the run, sleeping awsRetryBackoff between
+// attempts (restarting per request; the last entry repeats). HTTP error
+// statuses are never retried. Vars so tests can fake time.
 var (
 	awsRetryDeadline = 30 * time.Second
 	awsRetryBackoff  = []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second, 5 * time.Second}
+	awsRetryStart    time.Time
 	awsNow           = time.Now
 	awsSleep         = time.Sleep
 )
 
 // awsDo sends req, retrying network-level failures; req must have no body
 func awsDo(client *http.Client, what string, req *http.Request) (*http.Response, error) {
-	start := awsNow()
+	if awsRetryStart.IsZero() {
+		awsRetryStart = awsNow()
+	}
 	for attempt := 1; ; attempt++ {
 		resp, err := client.Do(req)
-		left := awsRetryDeadline - awsNow().Sub(start)
+		left := awsRetryDeadline - awsNow().Sub(awsRetryStart)
 		if err == nil || left <= 0 {
 			return resp, err
 		}

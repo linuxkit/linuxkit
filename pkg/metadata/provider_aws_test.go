@@ -61,18 +61,21 @@ func fakeIMDS(t *testing.T, tokenStatus int, requireToken bool, dropPuts, dropGe
 	srv.Config.SetKeepAlivesEnabled(false)
 	awsTokenURL = srv.URL + "/latest/api/token"
 	awsTokenFetched, awsToken, awsTokenErr = false, "", nil
-	// fake clock: only the recorded sleeps advance it
+	// fake clock: only the recorded sleeps (or a test) advance it
 	now, sleep := awsNow, awsSleep
-	clock := time.Unix(0, 0)
-	sleeps = nil
+	clock = time.Unix(0, 0)
+	sleeps, awsRetryStart = nil, time.Time{}
 	awsNow = func() time.Time { return clock }
 	awsSleep = func(d time.Duration) { sleeps = append(sleeps, d); clock = clock.Add(d) }
 	t.Cleanup(func() { awsNow, awsSleep = now, sleep; srv.Close() })
 	return srv, &puts, &gets
 }
 
-// sleeps records the retry sleeps since the last fakeIMDS
-var sleeps []time.Duration
+// clock and sleeps are the fake time and retry sleeps since the last fakeIMDS
+var (
+	clock  time.Time
+	sleeps []time.Duration
+)
 
 func checkSleeps(t *testing.T, want ...time.Duration) {
 	t.Helper()
@@ -167,4 +170,28 @@ func TestAWSGetNotFoundNoRetry(t *testing.T) {
 		t.Fatalf("want 1 GET, got %d", *gets)
 	}
 	checkSleeps(t)
+}
+
+func TestAWSGetRetrySharedDeadline(t *testing.T) {
+	srv, puts, gets := fakeIMDS(t, 200, true, 0, 1000)
+	var err error
+	awsToken, err = awsFetchToken(http.DefaultClient) // starts the run's clock
+	if err != nil || awsToken != "tok" {
+		t.Fatalf("awsFetchToken: %q, %v", awsToken, err)
+	}
+	awsTokenFetched = true
+	clock = clock.Add(28 * time.Second)
+	if _, err := awsGet(srv.URL + "/latest/meta-data/hostname"); err == nil {
+		t.Fatal("awsGet succeeded with all GETs dropped")
+	}
+	// 2s of the run's 30s left: 1s, then the 2s backoff clamped to 1s
+	checkSleeps(t, time.Second, time.Second)
+	// past the deadline a network error fails at once
+	if _, err := awsGet(srv.URL + "/latest/meta-data/hostname"); err == nil {
+		t.Fatal("awsGet succeeded with all GETs dropped")
+	}
+	checkSleeps(t, time.Second, time.Second)
+	if *puts != 1 || *gets != 4 {
+		t.Fatalf("want 1 PUT and 4 GETs, got %d and %d", *puts, *gets)
+	}
 }
