@@ -116,6 +116,16 @@ hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
 AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
 and made available in `/run/config/userdata`.
 
+Requests use IMDSv2 session tokens. If the token request gets an HTTP error,
+the provider falls back to IMDSv1.
+
+Network errors, such as a refused connection or a timeout, are retried with
+backoff for up to 30 seconds from the first AWS request. This covers IMDS not
+answering yet early in boot. AWS is probed first, so a host on another platform
+with no metadata service can wait up to 30 seconds here. To avoid that, list
+the providers to use in the metadata container's command, for example
+`command: ["/usr/bin/metadata", "gcp"]`.
+
 ## Hetzner
 
 Hetzner metadata is reached via the following URL

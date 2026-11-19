@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,9 @@ func (p *ProviderAWS) String() string {
 func (p *ProviderAWS) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := awsGet(metaDataURL + "hostname")
+	if err != nil {
+		log.Printf("AWS: Probe failed: %s", strings.TrimPrefix(err.Error(), "AWS: "))
+	}
 	return err == nil
 }
 
@@ -90,18 +94,100 @@ func awsMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	}
 }
 
+// awsTokenURL is the IMDSv2 session token endpoint (a var so tests can override it)
+var awsTokenURL = "http://169.254.169.254/latest/api/token"
+
+// IMDSv2 token state, fetched once per run: this process is one-shot, so no refresh is needed
+var (
+	awsTokenFetched bool
+	awsToken        string
+	awsTokenErr     error
+)
+
+// Network-level failures (no HTTP response) are retried until awsRetryDeadline
+// after the first AWS request of the run, sleeping awsRetryBackoff between
+// attempts (restarting per request; the last entry repeats). HTTP error
+// statuses are never retried. Vars so tests can fake time.
+var (
+	awsRetryDeadline = 30 * time.Second
+	awsRetryBackoff  = []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second, 5 * time.Second}
+	awsRetryStart    time.Time
+	awsNow           = time.Now
+	awsSleep         = time.Sleep
+)
+
+// awsDo sends req, retrying network-level failures; req must have no body
+func awsDo(client *http.Client, what string, req *http.Request) (*http.Response, error) {
+	if awsRetryStart.IsZero() {
+		awsRetryStart = awsNow()
+	}
+	for attempt := 1; ; attempt++ {
+		resp, err := client.Do(req)
+		left := awsRetryDeadline - awsNow().Sub(awsRetryStart)
+		if err == nil || left <= 0 {
+			return resp, err
+		}
+		delay := awsRetryBackoff[len(awsRetryBackoff)-1]
+		if attempt < len(awsRetryBackoff) {
+			delay = awsRetryBackoff[attempt-1]
+		}
+		if delay > left {
+			delay = left
+		}
+		log.Printf("AWS: %s attempt %d failed: %s, retrying in %s (%s left)", what, attempt, err,
+			delay.Round(100*time.Millisecond), left.Round(100*time.Millisecond))
+		awsSleep(delay)
+	}
+}
+
+// awsFetchToken requests an IMDSv2 token. A non-200 response leaves the token
+// empty (IMDSv1 fallback); no response at all means there is no metadata service.
+func awsFetchToken(client *http.Client) (string, error) {
+	req, err := http.NewRequest(http.MethodPut, awsTokenURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("AWS: http.NewRequest failed: %s", err)
+	}
+	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
+	resp, err := awsDo(client, "IMDSv2 token request", req)
+	if err != nil {
+		return "", fmt.Errorf("AWS: Could not contact metadata service: %s", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Printf("AWS: IMDSv2 token request returned %d, falling back to IMDSv1", resp.StatusCode)
+		return "", nil
+	}
+	token, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("AWS: Failed to read IMDSv2 token: %s", err)
+	}
+	log.Printf("AWS: Using IMDSv2")
+	return string(token), nil
+}
+
 // awsGet requests and extracts the requested URL
 func awsGet(url string) ([]byte, error) {
 	var client = &http.Client{
 		Timeout: time.Second * 2,
 	}
 
+	if !awsTokenFetched {
+		awsToken, awsTokenErr = awsFetchToken(client)
+		awsTokenFetched = true
+	}
+	if awsTokenErr != nil {
+		return nil, awsTokenErr
+	}
+
 	req, err := http.NewRequest("", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: http.NewRequest failed: %s", err)
 	}
+	if awsToken != "" {
+		req.Header.Set("X-aws-ec2-metadata-token", awsToken)
+	}
 
-	resp, err := client.Do(req)
+	resp, err := awsDo(client, "GET "+url, req)
 	if err != nil {
 		return nil, fmt.Errorf("AWS: Could not contact metadata service: %s", err)
 	}
