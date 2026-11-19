@@ -116,11 +116,15 @@ hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
 AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
 and made available in `/run/config/userdata`.
 
-Requests use IMDSv2 session tokens, falling back to IMDSv1 if the token
-request is rejected. Requests that get no response at all (e.g. IMDS not yet
-answering early in boot) are retried with backoff until 30s after the first
-AWS request, so a host that probes AWS without having it may wait that long;
-name the provider explicitly (e.g. `metadata aws`) to avoid probing the others.
+Requests use IMDSv2 session tokens. If the token request gets an HTTP error,
+the provider falls back to IMDSv1.
+
+Network errors, such as a refused connection or a timeout, are retried with
+backoff for up to 30 seconds from the first AWS request. This covers IMDS not
+answering yet early in boot. AWS is probed first, so a host on another platform
+with no metadata service can wait up to 30 seconds here. To avoid that, list
+the providers to use in the metadata container's command, for example
+`command: ["/usr/bin/metadata", "gcp"]`.
 
 ## Hetzner
 
