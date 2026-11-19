@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.18.60
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:24f9f554ed98f452fd940f5cff7f2ae1887e9974
+  - linuxkit/init:f5f0c42b30c1b022fa4aa18cb4b980a8db43380d
   - linuxkit/runc:07fa3fb4f171d0875f6c4f2c19885f21d9480458
 onboot:
   - name: extend

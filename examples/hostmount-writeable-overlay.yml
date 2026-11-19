@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:6.18.60
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:24f9f554ed98f452fd940f5cff7f2ae1887e9974
+  - linuxkit/init:f5f0c42b30c1b022fa4aa18cb4b980a8db43380d
   - linuxkit/runc:07fa3fb4f171d0875f6c4f2c19885f21d9480458
-  - linuxkit/containerd:8fa43851eee502729167a8033c69af278f0bf1e3
+  - linuxkit/containerd:53d65b95f88c491660acc7be0989f715cfb1adbe
   - linuxkit/ca-certificates:7c48a44e9eddcc175d1d082b3ea7572f34f29637
 onboot:
   - name: sysctl
@@ -18,7 +18,7 @@ onshutdown:
     command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
-    image: linuxkit/getty:acf4c09396ac91c060abe0ccfe35122decb45121
+    image: linuxkit/getty:ce23d93b10967e5edf61ed40d34bb9054e2cd532
     env:
      - INSECURE=true
     runtime:
