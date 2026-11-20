@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"strconv"
@@ -261,6 +263,103 @@ func TestScalewayUserdataDeadline(t *testing.T) {
 	}
 	s := time.Second
 	checkSleeps(t, s, 2*s, 4*s, 5*s, 5*s, 5*s, 5*s, 3*s)
+}
+
+func TestScalewayUserdataConnectedCancellation(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("binding a source port below 1024 needs root")
+	}
+	for _, body := range []bool{false, true} {
+		for _, deadline := range []bool{false, true} {
+			t.Run("body="+strconv.FormatBool(body)+"/deadline="+strconv.FormatBool(deadline), func(t *testing.T) {
+				started, closed, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
+				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					defer close(closed)
+					if body {
+						w.Header().Set("Content-Length", "100")
+						w.WriteHeader(http.StatusOK)
+						w.(http.Flusher).Flush()
+					}
+					close(started)
+					select {
+					case <-r.Context().Done():
+					case <-release:
+					}
+				}))
+				old := scalewayUserdataAddr
+				scalewayUserdataAddr = srv.Listener.Addr().String()
+				t.Cleanup(func() {
+					close(release)
+					srv.Close()
+					scalewayUserdataAddr = old
+				})
+				ctx, cancel := context.WithCancel(context.Background())
+				if deadline {
+					cancel()
+					ctx, cancel = context.WithTimeout(context.Background(), 250*time.Millisecond)
+				}
+				defer cancel()
+				result := make(chan error, 1)
+				go func() {
+					_, err := scalewayGetUserdata(ctx)
+					result <- err
+				}()
+				select {
+				case <-started:
+				case err := <-result:
+					t.Fatalf("userdata finished before an accepted request: %v", err)
+				case <-time.After(time.Second):
+					t.Fatal("server did not accept the request")
+				}
+				want := context.DeadlineExceeded
+				if !deadline {
+					want = context.Canceled
+					cancel()
+				}
+				select {
+				case err := <-result:
+					if !errors.Is(err, want) {
+						t.Fatalf("userdata error = %v; want %v", err, want)
+					}
+				case <-time.After(time.Second):
+					t.Fatal("connected userdata request ignored context")
+				}
+				select {
+				case <-closed:
+				case <-time.After(time.Second):
+					t.Fatal("cancelled userdata socket remained open")
+				}
+			})
+		}
+	}
+}
+
+func TestScalewayUserdataTruncatedThen404(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("binding a source port below 1024 needs root")
+	}
+	var attempts atomic.Int32
+	srv, count := flaky(t, 0, func(w http.ResponseWriter, _ *http.Request) {
+		if attempts.Add(1) == 1 {
+			w.Header().Set("Content-Length", "100")
+			w.Write([]byte(`{"hostname":{"content":"stale"}}`))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+	fakeTime(t)
+	old := scalewayUserdataAddr
+	scalewayUserdataAddr = srv.Listener.Addr().String()
+	t.Cleanup(func() { scalewayUserdataAddr = old })
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	if ud, err := scalewayGetUserdata(ctx); err != nil || ud != nil {
+		t.Fatalf("want nil, nil after truncated 200 then 404; got %q, %v", ud, err)
+	}
+	if count.Load() != 2 {
+		t.Fatalf("want exactly 2 requests, got %d", count.Load())
+	}
+	checkSleeps(t, time.Second)
 }
 
 // hetznerFake serves paths (relative to the server root) and points hetznerBase

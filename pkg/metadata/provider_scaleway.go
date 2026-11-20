@@ -145,11 +145,13 @@ func (p *ProviderScaleway) extractInformation(metadata []byte, information strin
 func scalewayGetUserdata(ctx context.Context) ([]byte, error) {
 	var body []byte
 	err := retry(ctx, "GET "+scalewayUserdataAddr+"/user_data/cloud-init", func() error {
+		attemptCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
 		var conn net.Conn
 		var err error
 		for port := 1; port <= 1024 && conn == nil; port++ {
-			d := net.Dialer{LocalAddr: &net.TCPAddr{Port: port}, Timeout: 2 * time.Second}
-			conn, err = d.DialContext(ctx, "tcp", scalewayUserdataAddr)
+			d := net.Dialer{LocalAddr: &net.TCPAddr{Port: port}}
+			conn, err = d.DialContext(attemptCtx, "tcp", scalewayUserdataAddr)
 			if err != nil && !errors.Is(err, syscall.EADDRINUSE) && !errors.Is(err, syscall.EACCES) {
 				return err
 			}
@@ -158,7 +160,10 @@ func scalewayGetUserdata(ctx context.Context) ([]byte, error) {
 			return fmt.Errorf("not able to find a free port below 1024: %w", err)
 		}
 		defer conn.Close()
-		if err := conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
+		stop := context.AfterFunc(attemptCtx, func() { conn.Close() })
+		defer stop()
+		deadline, _ := attemptCtx.Deadline()
+		if err := conn.SetDeadline(deadline); err != nil {
 			return err
 		}
 		if _, err := fmt.Fprintf(conn, "GET /user_data/cloud-init HTTP/1.0\r\n\r\n"); err != nil {
@@ -171,8 +176,15 @@ func scalewayGetUserdata(ctx context.Context) ([]byte, error) {
 		defer resp.Body.Close()
 		switch resp.StatusCode {
 		case http.StatusOK:
-			body, err = io.ReadAll(resp.Body)
-			return err
+			data, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			if err := attemptCtx.Err(); err != nil {
+				return err
+			}
+			body = data
+			return nil
 		case http.StatusNotFound:
 			return nil
 		}

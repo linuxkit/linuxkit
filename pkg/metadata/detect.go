@@ -35,18 +35,6 @@ func readTrimmed(label, path string) string {
 	return v
 }
 
-// isEC2UUID reports whether s is an EC2 UUID, in either byte order of the first group
-func isEC2UUID(s string) bool {
-	s = strings.ToLower(s)
-	if strings.HasPrefix(s, "ec2") {
-		return true
-	}
-	if len(s) < 8 {
-		return false
-	}
-	return strings.HasPrefix(s[6:8]+s[4:6]+s[2:4]+s[0:2], "ec2")
-}
-
 // identify matches the DMI tables against known clouds; first match wins
 func identify() platform {
 	dmi := map[string]string{}
@@ -57,7 +45,7 @@ func identify() platform {
 			dmi[f] = readTrimmed(f, filepath.Join(dmiRoot, f))
 		}
 	}
-	hvUUID := readTrimmed("hypervisor_uuid", hypervisorUUIDPath)
+	readTrimmed("hypervisor_uuid", hypervisorUUIDPath)
 	found := func(name, provider, file, value string) platform {
 		return platform{name, provider, fmt.Sprintf("%s=%q", file, value)}
 	}
@@ -69,12 +57,6 @@ func identify() platform {
 	switch v, p, s, tag := dmi["sys_vendor"], dmi["product_name"], dmi["product_serial"], dmi["chassis_asset_tag"]; {
 	case v == "Amazon EC2":
 		return found("aws", "aws", "sys_vendor", v)
-	// a random UUID starts with ec2 in one byte order or the other 1 time in 2048, so only trust it on Xen
-	case v == "Xen" && isEC2UUID(dmi["product_uuid"]):
-		return found("aws", "aws", "product_uuid", dmi["product_uuid"])
-	// only Xen guests have this file, and it is not byte-swapped
-	case strings.HasPrefix(strings.ToLower(hvUUID), "ec2"):
-		return found("aws", "aws", "hypervisor_uuid", hvUUID)
 	case instanceIDRe.MatchString(dmi["board_asset_tag"]):
 		return found("aws", "aws", "board_asset_tag", dmi["board_asset_tag"])
 	case p == "Google Compute Engine":
@@ -96,5 +78,6 @@ func identify() platform {
 	case p == "Alibaba Cloud ECS":
 		return found("alibaba", "", "product_name", p)
 	}
+	// UUID prefixes also occur on non-AWS Xen guests; let the shared EC2 probe disambiguate them.
 	return platform{}
 }

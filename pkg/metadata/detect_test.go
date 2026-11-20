@@ -17,12 +17,9 @@ func TestIdentify(t *testing.T) {
 			platform{"aws", "aws", `sys_vendor="Amazon EC2"`}},
 		{"aws metal", map[string]string{"sys_vendor": "Amazon EC2", "product_name": "m5.metal"}, "",
 			platform{"aws", "aws", `sys_vendor="Amazon EC2"`}},
-		{"aws xen uuid", map[string]string{"sys_vendor": "Xen", "product_uuid": "EC2E1A45-0000-0000-0000-000000000000"}, "",
-			platform{"aws", "aws", `product_uuid="EC2E1A45-0000-0000-0000-000000000000"`}},
-		{"aws xen uuid little-endian", map[string]string{"sys_vendor": "Xen", "product_uuid": "45E12AEC-0000-0000-0000-000000000000"}, "",
-			platform{"aws", "aws", `product_uuid="45E12AEC-0000-0000-0000-000000000000"`}},
-		{"aws hypervisor uuid", nil, "ec2a1b2c-0000-0000-0000-000000000000\n",
-			platform{"aws", "aws", `hypervisor_uuid="ec2a1b2c-0000-0000-0000-000000000000"`}},
+		{"xen uuid only", map[string]string{"sys_vendor": "Xen", "product_uuid": "EC2E1A45-0000-0000-0000-000000000000"}, "", platform{}},
+		{"xen uuid little-endian only", map[string]string{"sys_vendor": "Xen", "product_uuid": "45E12AEC-0000-0000-0000-000000000000"}, "", platform{}},
+		{"hypervisor uuid only", nil, "ec2a1b2c-0000-0000-0000-000000000000\n", platform{}},
 		{"hypervisor uuid byte-swapped only", nil, "45e12aec-0000-0000-0000-000000000000\n", platform{}},
 		{"vmware ec2 uuid", map[string]string{"sys_vendor": "VMware, Inc.", "product_uuid": "EC2E1A45-0000-0000-0000-000000000000"}, "", platform{}},
 		{"vmware ec2 uuid little-endian", map[string]string{"sys_vendor": "VMware, Inc.", "product_uuid": "45E12AEC-0000-0000-0000-000000000000"}, "", platform{}},
@@ -42,6 +39,9 @@ func TestIdentify(t *testing.T) {
 			platform{"hetzner", "hetzner", `sys_vendor="Hetzner"`}},
 		{"openstack nova", map[string]string{"product_name": "OpenStack Nova"}, "",
 			platform{"openstack", "openstack", `product_name="OpenStack Nova"`}},
+		{"openstack xen ec2 uuid", map[string]string{"sys_vendor": "Xen", "product_name": "OpenStack Nova",
+			"product_uuid": "ec2e1a45-1234-4567-89ab-0123456789ab"}, "ec2a1b2c-0000-0000-0000-000000000000",
+			platform{"openstack", "openstack", `product_name="OpenStack Nova"`}},
 		{"openstack compute", map[string]string{"product_name": "OpenStack Compute"}, "",
 			platform{"openstack", "openstack", `product_name="OpenStack Compute"`}},
 		{"scaleway", map[string]string{"sys_vendor": "Scaleway"}, "",
@@ -52,6 +52,8 @@ func TestIdentify(t *testing.T) {
 			platform{"digitalocean", "digitalocean", `sys_vendor="DigitalOcean"`}},
 		{"azure", map[string]string{"chassis_asset_tag": "7783-7084-3265-9085-8269-3286-77"}, "",
 			platform{"azure", "", `chassis_asset_tag="7783-7084-3265-9085-8269-3286-77"`}},
+		{"azure ec2 hypervisor uuid", map[string]string{"chassis_asset_tag": "7783-7084-3265-9085-8269-3286-77"},
+			"ec2a1b2c-0000-0000-0000-000000000000", platform{"azure", "", `chassis_asset_tag="7783-7084-3265-9085-8269-3286-77"`}},
 		{"oracle", map[string]string{"chassis_asset_tag": "OracleCloud.com"}, "",
 			platform{"oracle", "", `chassis_asset_tag="OracleCloud.com"`}},
 		{"alibaba", map[string]string{"product_name": "Alibaba Cloud ECS"}, "",
@@ -99,20 +101,5 @@ func TestIdentify(t *testing.T) {
 				t.Errorf("identify() = %+v, want %+v", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestIsEC2UUID(t *testing.T) {
-	for s, want := range map[string]bool{
-		"ec2e1a45-0000-0000-0000-000000000000": true,
-		"EC2E1A45-0000-0000-0000-000000000000": true,
-		"45E12AEC-0000-0000-0000-000000000000": true,
-		"12345678-0000-0000-0000-000000000000": false,
-		"45e1":                                 false,
-		"":                                     false,
-	} {
-		if got := isEC2UUID(s); got != want {
-			t.Errorf("isEC2UUID(%q) = %v, want %v", s, got, want)
-		}
 	}
 }
