@@ -144,9 +144,63 @@ func TestGetCancelled(t *testing.T) {
 	}
 }
 
-func TestFetchSendsMethodAndHeaders(t *testing.T) {
+func TestGetNoDeadlineRetries(t *testing.T) {
+	fakeTime(t)
+	srv, count := flaky(t, 2, ok)
+	body, err := get(context.Background(), srv.URL, nil)
+	if err != nil || string(body) != "ok" {
+		t.Fatalf("get: %q, %v", body, err)
+	}
+	if count.Load() != 3 {
+		t.Fatalf("want 3 requests, got %d", count.Load())
+	}
+	checkSleeps(t, time.Second, 2*time.Second)
+}
+
+func TestGetNoDeadlineCancelled(t *testing.T) {
+	fakeTime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv, count := flaky(t, 1<<30, ok)
+	go func() {
+		for count.Load() < 3 {
+			time.Sleep(time.Millisecond)
+		}
+		cancel()
+	}()
+	if _, err := get(ctx, srv.URL, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("want context.Canceled, got %v", err)
+	}
+}
+
+// two requests on one context share its deadline
+func TestGetSharesDeadline(t *testing.T) {
 	fakeTime(t)
 	srv, _ := flaky(t, 0, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/drop" {
+			drop(t, w)
+			return
+		}
+		ok(w, r)
+	})
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	if _, err := get(ctx, srv.URL, nil); err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	clockMu.Lock()
+	clock = clock.Add(28 * time.Second)
+	clockMu.Unlock()
+	if _, err := get(ctx, srv.URL+"/drop", nil); err == nil {
+		t.Fatal("get succeeded with every request dropped")
+	}
+	checkSleeps(t, time.Second, time.Second)
+}
+
+func TestFetchSendsMethodAndHeaders(t *testing.T) {
+	fakeTime(t)
+	// the first attempt is dropped, so the header must survive the retry
+	srv, count := flaky(t, 1, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut || r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds") != "21600" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -159,5 +213,8 @@ func TestFetchSendsMethodAndHeaders(t *testing.T) {
 	hdr.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
 	if body, err := fetch(ctx, http.MethodPut, srv.URL, hdr); err != nil || string(body) != "ok" {
 		t.Fatalf("fetch: %q, %v", body, err)
+	}
+	if count.Load() != 2 {
+		t.Fatalf("want 2 requests, got %d", count.Load())
 	}
 }
