@@ -10,6 +10,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"runtime/debug"
 	"testing"
 )
 
@@ -38,12 +39,23 @@ func TestVMwareProbeNotVM(t *testing.T) {
 	}
 }
 
+// A real #GP arrives as SIGSEGV with si_code SI_KERNEL, which the runtime turns
+// into a recoverable panic only under debug.SetPanicOnFault; the fake checks it
+// is set, then panics as the runtime would.
 func TestVMwareIsVMRecoversFault(t *testing.T) {
 	orig := vmwareIsVirtualWorld
-	vmwareIsVirtualWorld = func(bool) (bool, error) { panic("signal SIGSEGV") }
+	vmwareIsVirtualWorld = func(bool) (bool, error) {
+		if !debug.SetPanicOnFault(true) {
+			t.Error("SetPanicOnFault not set around IsVirtualWorld")
+		}
+		panic("signal SIGSEGV")
+	}
 	t.Cleanup(func() { vmwareIsVirtualWorld = orig })
 	if isVM, err := vmwareIsVM(); isVM || err == nil || err.Error() != "vmware backdoor faulted" {
 		t.Errorf("vmwareIsVM: %v, %v; want false, \"vmware backdoor faulted\"", isVM, err)
+	}
+	if debug.SetPanicOnFault(false) {
+		t.Error("SetPanicOnFault left set after vmwareIsVM")
 	}
 }
 
