@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -262,7 +264,8 @@ func TestScalewayUserdataDeadline(t *testing.T) {
 }
 
 // hetznerFake serves paths (relative to the server root) and points hetznerBase
-// and ec2Base at it; it counts requests outside /hetzner/v1/ and answers them 404
+// and ec2Base at it; it counts requests outside /hetzner/v1/ and answers them 404;
+// an empty body is served as 204, as Hetzner does for missing userdata
 func hetznerFake(t *testing.T, paths map[string]string) (context.Context, *atomic.Int32) {
 	var strays atomic.Int32
 	srv, _ := flaky(t, 0, func(w http.ResponseWriter, r *http.Request) {
@@ -273,6 +276,10 @@ func hetznerFake(t *testing.T, paths map[string]string) (context.Context, *atomi
 		body, found := paths[r.URL.Path]
 		if !found {
 			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if body == "" {
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		w.Write([]byte(body))
@@ -343,5 +350,25 @@ func TestGCPShortHostname(t *testing.T) {
 		if got, err := os.ReadFile(path.Join(ConfigPath, Hostname)); err != nil || string(got) != want {
 			t.Errorf("served %q: hostname %q, %v; want %q", served, got, err, want)
 		}
+	}
+}
+
+func TestHetznerNoUserdata(t *testing.T) {
+	ctx, _ := hetznerFake(t, map[string]string{
+		"/hetzner/v1/metadata/hostname":    "hz-host",
+		"/hetzner/v1/metadata/instance-id": "42",
+		"/hetzner/v1/metadata/public-ipv4": "1.2.3.9",
+		"/hetzner/v1/metadata/public-keys": `[]`,
+		"/hetzner/v1/userdata":             "", // served as 204 No Content
+	})
+	var logs bytes.Buffer
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	userdata, err := NewHetzner().Extract(ctx)
+	if userdata != nil || err != nil {
+		t.Fatalf("Extract: %q, %v; want nil, nil", userdata, err)
+	}
+	if strings.Contains(logs.String(), "user-data") {
+		t.Errorf("logged a user-data failure: %s", logs.String())
 	}
 }
