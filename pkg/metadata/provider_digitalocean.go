@@ -3,17 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path"
-	"time"
 )
 
-const (
-	digitalOceanMetaDataURL = "http://169.254.169.254/metadata/v1/"
-)
+// digitalOceanBase is the DigitalOcean metadata service (a var so tests can override it)
+var digitalOceanBase = "http://169.254.169.254/metadata/v1/"
 
 // ProviderDigitalOcean is the type implementing the Provider interface for DigitalOcean
 type ProviderDigitalOcean struct {
@@ -31,16 +27,16 @@ func (p *ProviderDigitalOcean) String() string {
 // Probe checks if we are running on DigitalOcean
 func (p *ProviderDigitalOcean) Probe(ctx context.Context) bool {
 	// Getting the index should always work...
-	_, err := digitalOceanGet(digitalOceanMetaDataURL)
+	_, err := get(ctx, digitalOceanBase, nil)
 	return err == nil
 }
 
 // Extract gets both the DigitalOcean specific and generic userdata
 func (p *ProviderDigitalOcean) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := digitalOceanGet(digitalOceanMetaDataURL + "hostname")
+	hostname, err := get(ctx, digitalOceanBase+"hostname", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("DigitalOcean: %w", err)
 	}
 	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
@@ -48,24 +44,24 @@ func (p *ProviderDigitalOcean) Extract(ctx context.Context) ([]byte, error) {
 	}
 
 	// public ipv4
-	digitalOceanMetaGet("interfaces/public/0/ipv4/address", "public_ipv4", 0644)
+	digitalOceanMetaGet(ctx, "interfaces/public/0/ipv4/address", "public_ipv4", 0644)
 
 	// private ipv4
-	digitalOceanMetaGet("interfaces/private/0/ipv4/address", "private_ipv4", 0644)
+	digitalOceanMetaGet(ctx, "interfaces/private/0/ipv4/address", "private_ipv4", 0644)
 
 	// region
-	digitalOceanMetaGet("region", "region", 0644)
+	digitalOceanMetaGet(ctx, "region", "region", 0644)
 
 	// droplet id
-	digitalOceanMetaGet("id", "id", 0644)
+	digitalOceanMetaGet(ctx, "id", "id", 0644)
 
 	// ssh
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("DigitalOcean: Failed to get ssh data: %s", err)
 	}
 
 	// Generic userdata
-	userData, err := digitalOceanGet(digitalOceanMetaDataURL + "user-data")
+	userData, err := get(ctx, digitalOceanBase+"user-data", nil)
 	if err != nil {
 		log.Printf("DigitalOcean: Failed to get user-data: %s", err)
 		// This is not an error
@@ -75,8 +71,8 @@ func (p *ProviderDigitalOcean) Extract(ctx context.Context) ([]byte, error) {
 }
 
 // lookup a value (lookupName) in DigitalOcean metaservice and store in given fileName
-func digitalOceanMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := digitalOceanGet(digitalOceanMetaDataURL + lookupName); err == nil {
+func digitalOceanMetaGet(ctx context.Context, lookupName string, fileName string, fileMode os.FileMode) {
+	if lookupValue, err := get(ctx, digitalOceanBase+lookupName, nil); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -89,34 +85,9 @@ func digitalOceanMetaGet(lookupName string, fileName string, fileMode os.FileMod
 	}
 }
 
-// digitalOceanGet requests and extracts the requested URL
-func digitalOceanGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("DigitalOcean: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("DigitalOcean: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("DigitalOcean: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("DigitalOcean: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
 // SSH keys:
-func (p *ProviderDigitalOcean) handleSSH() error {
-	sshKeys, err := digitalOceanGet(digitalOceanMetaDataURL + "public-keys")
+func (p *ProviderDigitalOcean) handleSSH(ctx context.Context) error {
+	sshKeys, err := get(ctx, digitalOceanBase+"public-keys", nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}

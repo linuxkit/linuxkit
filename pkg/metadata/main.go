@@ -14,9 +14,6 @@ import (
 )
 
 const (
-	// ConfigPath is where the data is extracted to
-	ConfigPath = "/run/config"
-
 	// Hostname is the filename in configPath where the hostname is stored
 	Hostname = "hostname"
 
@@ -26,6 +23,9 @@ const (
 
 var (
 	defaultLogFormatter = &log.TextFormatter{}
+
+	// ConfigPath is where the data is extracted to (a var so tests can override it)
+	ConfigPath = "/run/config"
 
 	// ec2Base is the AWS-compatible metadata service (a var so tests can override it)
 	ec2Base = "http://169.254.169.254/"
