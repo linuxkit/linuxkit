@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -24,11 +25,24 @@ const (
 	guestVendorData = "guestinfo.vendordata"
 )
 
-// vmwareIsVM and vmwareGuestInfo talk to the VMware backdoor; tests replace them.
-// IsVirtualWorld ignores access errors because the container has no
-// CAP_SYS_RAWIO, and VMware allows backdoor port access from user mode anyway.
-var vmwareIsVM = func() (bool, error) { return vmcheck.IsVirtualWorld(true) }
+// vmwareIsVirtualWorld and vmwareGuestInfo talk to the VMware backdoor; tests
+// replace them. IsVirtualWorld ignores access errors because the container has
+// no CAP_SYS_RAWIO, and by default VMware allows backdoor access from user mode.
+var vmwareIsVirtualWorld = vmcheck.IsVirtualWorld
 var vmwareGuestInfo = func(key string) (string, error) { return rpcvmx.NewConfig().String(key, "") }
+
+// vmwareIsVM reports whether we run on VMware. With
+// monitor_control.restrict_backdoor=TRUE the backdoor IN faults at CPL3; recover
+// so that metadata carries on instead of crashing.
+var vmwareIsVM = func() (isVM bool, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("metadata: VMware backdoor faulted: %v", r)
+			isVM, err = false, errors.New("vmware backdoor faulted")
+		}
+	}()
+	return vmwareIsVirtualWorld(true)
+}
 
 // ProviderVMware implements the Provider interface for VMware guestinfo api
 type ProviderVMware struct{}
