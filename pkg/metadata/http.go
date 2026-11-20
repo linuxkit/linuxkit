@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"time"
 )
@@ -40,9 +41,9 @@ func withBudget(parent context.Context) (context.Context, context.CancelFunc) {
 
 // retry calls try until it returns nil or a *statusError, or ctx is done; any other error
 // is a network error and is retried with retryBackoff, logging what on each failed attempt.
-// ctx needs a deadline (see withBudget); without one nothing is retried.
+// Without a deadline only cancellation ends it: one missed reply never rules a provider out.
 func retry(ctx context.Context, what string, try func() error) error {
-	deadline, _ := ctx.Deadline()
+	deadline, hasDeadline := ctx.Deadline()
 	for attempt := 1; ; attempt++ {
 		err := try()
 		var se *statusError
@@ -52,7 +53,10 @@ func retry(ctx context.Context, what string, try func() error) error {
 		if ctx.Err() != nil {
 			return fmt.Errorf("Could not contact metadata service: %w (%w)", err, ctx.Err())
 		}
-		left := deadline.Sub(now())
+		left := time.Duration(math.MaxInt64)
+		if hasDeadline {
+			left = deadline.Sub(now())
+		}
 		if left <= 0 {
 			return fmt.Errorf("Could not contact metadata service: %w", err)
 		}
