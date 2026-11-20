@@ -260,3 +260,71 @@ func TestScalewayUserdataDeadline(t *testing.T) {
 	s := time.Second
 	checkSleeps(t, s, 2*s, 4*s, 5*s, 5*s, 5*s, 5*s, 3*s)
 }
+
+// hetznerFake serves paths (relative to the server root) and points hetznerBase
+// and ec2Base at it; it counts requests outside /hetzner/v1/ and answers them 404
+func hetznerFake(t *testing.T, paths map[string]string) (context.Context, *atomic.Int32) {
+	var strays atomic.Int32
+	srv, _ := flaky(t, 0, func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/hetzner/v1/") {
+			t.Logf("request outside /hetzner/v1/: %s", r.URL.Path)
+			strays.Add(1)
+		}
+		body, found := paths[r.URL.Path]
+		if !found {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Write([]byte(body))
+	})
+	fakeTime(t)
+	hb, eb, cfg := hetznerBase, ec2Base, ConfigPath
+	hetznerBase = strings.Replace(hetznerBase, "http://169.254.169.254", srv.URL, 1)
+	ec2Base, ConfigPath = srv.URL+"/", t.TempDir()
+	ctx, cancel := withBudget(context.Background())
+	t.Cleanup(func() {
+		cancel()
+		hetznerBase, ec2Base, ConfigPath = hb, eb, cfg
+	})
+	return ctx, &strays
+}
+
+func TestHetznerExtract(t *testing.T) {
+	ctx, strays := hetznerFake(t, map[string]string{
+		"/hetzner/v1/metadata/hostname":    "hz-host",
+		"/hetzner/v1/metadata/instance-id": "42",
+		"/hetzner/v1/metadata/public-ipv4": "1.2.3.9",
+		"/hetzner/v1/metadata/public-keys": `["ssh-ed25519 AAAA one","ssh-rsa BBBB two"]`,
+		"/hetzner/v1/userdata":             "hz-ud",
+	})
+	p := NewHetzner()
+	if !p.Probe(ctx) {
+		t.Fatal("Probe failed")
+	}
+	userdata, err := p.Extract(ctx)
+	if err != nil || string(userdata) != "hz-ud" {
+		t.Fatalf("Extract: %q, %v; want %q", userdata, err, "hz-ud")
+	}
+	for name, want := range map[string]string{
+		Hostname: "hz-host", "instance_id": "42", "public_ipv4": "1.2.3.9",
+		"ssh/authorized_keys": "ssh-ed25519 AAAA one\nssh-rsa BBBB two\n",
+	} {
+		if got, err := os.ReadFile(path.Join(ConfigPath, name)); err != nil || string(got) != want {
+			t.Errorf("%s: %q, %v; want %q", name, got, err, want)
+		}
+	}
+	if _, err := os.Stat(path.Join(ConfigPath, "local_ipv4")); !os.IsNotExist(err) {
+		t.Errorf("local_ipv4 written: %v", err)
+	}
+	if n := strays.Load(); n != 0 {
+		t.Errorf("%d requests outside /hetzner/v1/", n)
+	}
+}
+
+func TestHetznerIgnoresEC2Routes(t *testing.T) {
+	ctx, _ := hetznerFake(t, map[string]string{"/latest/meta-data/hostname": "ec2-host"})
+	if NewHetzner().Probe(ctx) {
+		t.Fatal("Probe succeeded on an EC2-only metadata service")
+	}
+	checkSleeps(t) // 404 is final, no retry
+}
