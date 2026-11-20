@@ -1,18 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path"
-	"time"
 )
 
-const (
-	vultrMetaDataURL = "http://169.254.169.254/v1/"
-)
+// vultrBase is the Vultr metadata service (a var so tests can override it)
+var vultrBase = "http://169.254.169.254/v1/"
 
 // ProviderVultr is the type implementing the Provider interface for Vultr
 type ProviderVultr struct {
@@ -28,18 +25,18 @@ func (p *ProviderVultr) String() string {
 }
 
 // Probe checks if we are running on Vultr
-func (p *ProviderVultr) Probe() bool {
+func (p *ProviderVultr) Probe(ctx context.Context) bool {
 	// Getting the index should always work...
-	_, err := vultrGet(vultrMetaDataURL)
+	_, err := get(ctx, vultrBase, nil)
 	return err == nil
 }
 
 // Extract gets both the Vultr specific and generic userdata
-func (p *ProviderVultr) Extract() ([]byte, error) {
+func (p *ProviderVultr) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := vultrGet(vultrMetaDataURL + "hostname")
+	hostname, err := get(ctx, vultrBase+"hostname", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Vultr: %w", err)
 	}
 	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
@@ -47,22 +44,22 @@ func (p *ProviderVultr) Extract() ([]byte, error) {
 	}
 
 	// public ipv4
-	vultrMetaGet("interfaces/0/ipv4/address", "public_ipv4", 0644)
+	vultrMetaGet(ctx, "interfaces/0/ipv4/address", "public_ipv4", 0644)
 
 	// private ipv4
-	vultrMetaGet("interfaces/1/ipv4/address", "private_ipv4", 0644)
+	vultrMetaGet(ctx, "interfaces/1/ipv4/address", "private_ipv4", 0644)
 
 	// private netmask
-	vultrMetaGet("interfaces/1/ipv4/netmask", "private_netmask", 0644)
+	vultrMetaGet(ctx, "interfaces/1/ipv4/netmask", "private_netmask", 0644)
 
 	// region code
-	vultrMetaGet("region/regioncode", "region_code", 0644)
+	vultrMetaGet(ctx, "region/regioncode", "region_code", 0644)
 
 	// instance-id
-	vultrMetaGet("instanceid", "instance_id", 0644)
+	vultrMetaGet(ctx, "instanceid", "instance_id", 0644)
 
 	// ssh
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("Vultr: Failed to get ssh data: %s", err)
 	}
 
@@ -70,8 +67,8 @@ func (p *ProviderVultr) Extract() ([]byte, error) {
 }
 
 // lookup a value (lookupName) in Vultr metaservice and store in given fileName
-func vultrMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := vultrGet(vultrMetaDataURL + lookupName); err == nil {
+func vultrMetaGet(ctx context.Context, lookupName string, fileName string, fileMode os.FileMode) {
+	if lookupValue, err := get(ctx, vultrBase+lookupName, nil); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -84,34 +81,9 @@ func vultrMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	}
 }
 
-// vultrGet requests and extracts the requested URL
-func vultrGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Vultr: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Vultr: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Vultr: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Vultr: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
 // SSH keys:
-func (p *ProviderVultr) handleSSH() error {
-	sshKeys, err := vultrGet(vultrMetaDataURL + "public-keys")
+func (p *ProviderVultr) handleSSH(ctx context.Context) error {
+	sshKeys, err := get(ctx, vultrBase+"public-keys", nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}

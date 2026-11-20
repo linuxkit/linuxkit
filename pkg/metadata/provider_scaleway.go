@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,16 +14,21 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
 const (
-	scalewayMetadataURL  = "http://169.254.42.42/"
-	scalewayUserdataURL  = "169.254.42.42:80"
 	instanceIDFile       = "instance_id"
 	instanceLocationFile = "instance_location"
 	publicIPFile         = "public_ip"
 	privateIPFile        = "private_ip"
+)
+
+// The Scaleway metadata service and its userdata endpoint (vars so tests can override them)
+var (
+	scalewayBase         = "http://169.254.42.42/"
+	scalewayUserdataAddr = "169.254.42.42:80"
 )
 
 // ProviderScaleway is the type implementing the Provider interface for Scaleway
@@ -39,11 +45,11 @@ func (p *ProviderScaleway) String() string {
 }
 
 // Probe checks if we are running on Scaleway
-func (p *ProviderScaleway) Probe() bool {
+func (p *ProviderScaleway) Probe(ctx context.Context) bool {
 	// Getting the conf should always work...
-	_, err := scalewayGet(scalewayMetadataURL + "conf")
+	_, err := get(ctx, scalewayBase+"conf", nil)
 	if err != nil {
-		log.Print(err.Error())
+		log.Printf("Scaleway: %s", err)
 		return false
 	}
 
@@ -51,8 +57,8 @@ func (p *ProviderScaleway) Probe() bool {
 }
 
 // Extract gets both the Scaleway specific and generic userdata
-func (p *ProviderScaleway) Extract() ([]byte, error) {
-	metadata, err := scalewayGet(scalewayMetadataURL + "conf")
+func (p *ProviderScaleway) Extract(ctx context.Context) ([]byte, error) {
+	metadata, err := get(ctx, scalewayBase+"conf", nil)
 	if err != nil {
 		return nil, fmt.Errorf("Scaleway: Failed to get conf: %s", err)
 	}
@@ -114,7 +120,7 @@ func (p *ProviderScaleway) Extract() ([]byte, error) {
 	}
 
 	// Generic userdata
-	userData, err := scalewayGetUserdata()
+	userData, err := scalewayGetUserdata(ctx)
 	if err != nil {
 		log.Printf("Scaleway: Failed to get user-data: %s", err)
 		// This is not an error
@@ -134,70 +140,57 @@ func (p *ProviderScaleway) extractInformation(metadata []byte, information strin
 	return []byte(""), fmt.Errorf("No %s found", information)
 }
 
-// scalewayGet requests and extracts the requested URL
-func scalewayGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Scaleway: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Scaleway: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Scaleway: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Scaleway: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
-// scalewayGetUserdata returns the userdata of the server, differs from scalewayGet since the source port has to be below 1024 in order to work
-func scalewayGetUserdata() ([]byte, error) {
-	server, err := net.ResolveTCPAddr("tcp", scalewayUserdataURL)
-	if err != nil {
-		return nil, err
-	}
-	var conn *net.TCPConn
-	foundPort := false
-	for i := 1; i <= 1024; i++ {
-		client, err := net.ResolveTCPAddr("tcp", ":"+strconv.Itoa(i))
+// scalewayGetUserdata returns the userdata of the server, or nil if there is none. Unlike get, it needs
+// a source port below 1024, so it speaks HTTP over its own connection; network errors are retried.
+func scalewayGetUserdata(ctx context.Context) ([]byte, error) {
+	var body []byte
+	err := retry(ctx, "GET "+scalewayUserdataAddr+"/user_data/cloud-init", func() error {
+		attemptCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		var conn net.Conn
+		var err error
+		for port := 1; port <= 1024 && conn == nil; port++ {
+			d := net.Dialer{LocalAddr: &net.TCPAddr{Port: port}}
+			conn, err = d.DialContext(attemptCtx, "tcp", scalewayUserdataAddr)
+			if err != nil && !errors.Is(err, syscall.EADDRINUSE) && !errors.Is(err, syscall.EACCES) {
+				return err
+			}
+		}
+		if conn == nil {
+			return fmt.Errorf("not able to find a free port below 1024: %w", err)
+		}
+		defer conn.Close()
+		stop := context.AfterFunc(attemptCtx, func() { conn.Close() })
+		defer stop()
+		deadline, _ := attemptCtx.Deadline()
+		if err := conn.SetDeadline(deadline); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(conn, "GET /user_data/cloud-init HTTP/1.0\r\n\r\n"); err != nil {
+			return err
+		}
+		resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
 		if err != nil {
-			return nil, err
+			return err
 		}
-
-		conn, err = net.DialTCP("tcp", client, server)
-		if err == nil {
-			foundPort = true
-			break
+		defer resp.Body.Close()
+		switch resp.StatusCode {
+		case http.StatusOK:
+			data, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			if err := attemptCtx.Err(); err != nil {
+				return err
+			}
+			body = data
+			return nil
+		case http.StatusNotFound:
+			return nil
 		}
-	}
-	if foundPort == false {
-		return nil, errors.New("not able to found a free port below 1024")
-	}
-	defer conn.Close()
-	fmt.Fprintf(conn, "GET /user_data/cloud-init HTTP/1.0\r\n\r\n")
-
-	reader := bufio.NewReader(conn)
-	resp, err := http.ReadResponse(reader, nil)
-	if err != nil || resp.StatusCode == 404 {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+		return &statusError{resp.StatusCode}
+	})
+	return body, err
 }
 
 func (p *ProviderScaleway) handleSSH(metadata []byte) error {

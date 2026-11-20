@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
-	"time"
 )
+
+// hetznerBase is the Hetzner metadata service (a var so tests can override it)
+var hetznerBase = "http://169.254.169.254/hetzner/v1/"
 
 // ProviderHetzner is the type implementing the Provider interface for Hetzner
 type ProviderHetzner struct {
@@ -25,18 +28,18 @@ func (p *ProviderHetzner) String() string {
 }
 
 // Probe checks if we are running on Hetzner
-func (p *ProviderHetzner) Probe() bool {
+func (p *ProviderHetzner) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
-	_, err := hetznerGet(metaDataURL + "hostname")
+	_, err := get(ctx, hetznerBase+"metadata/hostname", nil)
 	return err == nil
 }
 
 // Extract gets both the Hetzner specific and generic userdata
-func (p *ProviderHetzner) Extract() ([]byte, error) {
+func (p *ProviderHetzner) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := hetznerGet(metaDataURL + "hostname")
+	hostname, err := get(ctx, hetznerBase+"metadata/hostname", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Hetzner: %w", err)
 	}
 	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
@@ -44,26 +47,24 @@ func (p *ProviderHetzner) Extract() ([]byte, error) {
 	}
 
 	// public ipv4
-	hetznerMetaGet("public-ipv4", "public_ipv4", 0644)
-
-	// private ipv4
-	hetznerMetaGet("local-ipv4", "local_ipv4", 0644)
+	hetznerMetaGet(ctx, "public-ipv4", "public_ipv4", 0644)
 
 	// instance-id
-	hetznerMetaGet("instance-id", "instance_id", 0644)
-
-	// // local-hostname
-	// hetznerMetaGet("local-hostname", "local_hostname", 0644)
+	hetznerMetaGet(ctx, "instance-id", "instance_id", 0644)
 
 	// ssh
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("Hetzner: Failed to get ssh data: %s", err)
 	}
 
 	// Generic userdata
-	userData, err := hetznerGet(userDataURL)
+	userData, err := get(ctx, hetznerBase+"userdata", nil)
 	if err != nil {
-		log.Printf("Hetzner: Failed to get user-data: %s", err)
+		// Hetzner answers 204 when the server has no userdata
+		var se *statusError
+		if !errors.As(err, &se) || se.Code != http.StatusNoContent {
+			log.Printf("Hetzner: Failed to get user-data: %s", err)
+		}
 		// This is not an error
 		return nil, nil
 	}
@@ -71,8 +72,8 @@ func (p *ProviderHetzner) Extract() ([]byte, error) {
 }
 
 // lookup a value (lookupName) in hetzner metaservice and store in given fileName
-func hetznerMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := hetznerGet(metaDataURL + lookupName); err == nil {
+func hetznerMetaGet(ctx context.Context, lookupName string, fileName string, fileMode os.FileMode) {
+	if lookupValue, err := get(ctx, hetznerBase+"metadata/"+lookupName, nil); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -85,34 +86,9 @@ func hetznerMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	}
 }
 
-// hetznerGet requests and extracts the requested URL
-func hetznerGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Hetzner: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Hetzner: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Hetzner: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Hetzner: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
 // SSH keys:
-func (p *ProviderHetzner) handleSSH() error {
-	sshKeysJSON, err := hetznerGet(metaDataURL + "public-keys")
+func (p *ProviderHetzner) handleSSH(ctx context.Context) error {
+	sshKeysJSON, err := get(ctx, hetznerBase+"metadata/public-keys", nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}

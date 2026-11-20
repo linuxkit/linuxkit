@@ -1,13 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path"
-	"time"
 )
 
 // ProviderOpenstack is the type implementing the Provider interface for OpenStack
@@ -24,18 +22,18 @@ func (p *ProviderOpenstack) String() string {
 }
 
 // Probe checks if we are running on OpenStack
-func (p *ProviderOpenstack) Probe() bool {
+func (p *ProviderOpenstack) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
-	_, err := openstackGet(metaDataURL + "hostname")
+	_, err := get(ctx, ec2Base+"latest/meta-data/hostname", nil)
 	return err == nil
 }
 
 // Extract gets both the OpenStack specific and generic userdata
-func (p *ProviderOpenstack) Extract() ([]byte, error) {
+func (p *ProviderOpenstack) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := openstackGet(metaDataURL + "hostname")
+	hostname, err := get(ctx, ec2Base+"latest/meta-data/hostname", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("OpenStack: %w", err)
 	}
 	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
@@ -43,30 +41,30 @@ func (p *ProviderOpenstack) Extract() ([]byte, error) {
 	}
 
 	// public ipv4
-	openstackMetaGet("public-ipv4", "public_ipv4", 0644)
+	openstackMetaGet(ctx, "public-ipv4", "public_ipv4", 0644)
 
 	// private ipv4
-	openstackMetaGet("local-ipv4", "local_ipv4", 0644)
+	openstackMetaGet(ctx, "local-ipv4", "local_ipv4", 0644)
 
 	// availability zone
-	openstackMetaGet("placement/availability-zone", "availability_zone", 0644)
+	openstackMetaGet(ctx, "placement/availability-zone", "availability_zone", 0644)
 
 	// instance type
-	openstackMetaGet("instance-type", "instance_type", 0644)
+	openstackMetaGet(ctx, "instance-type", "instance_type", 0644)
 
 	// instance-id
-	openstackMetaGet("instance-id", "instance_id", 0644)
+	openstackMetaGet(ctx, "instance-id", "instance_id", 0644)
 
 	// local-hostname
-	openstackMetaGet("local-hostname", "local_hostname", 0644)
+	openstackMetaGet(ctx, "local-hostname", "local_hostname", 0644)
 
 	// ssh
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("OpenStack: Failed to get ssh data: %s", err)
 	}
 
 	// Generic userdata
-	userData, err := openstackGet(userDataURL)
+	userData, err := get(ctx, ec2Base+"latest/user-data", nil)
 	if err != nil {
 		log.Printf("OpenStack: Failed to get user-data: %s", err)
 		// This is not an error
@@ -76,8 +74,8 @@ func (p *ProviderOpenstack) Extract() ([]byte, error) {
 }
 
 // lookup a value (lookupName) in OpenStack's metaservice and store in given fileName
-func openstackMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := openstackGet(metaDataURL + lookupName); err == nil {
+func openstackMetaGet(ctx context.Context, lookupName string, fileName string, fileMode os.FileMode) {
+	if lookupValue, err := get(ctx, ec2Base+"latest/meta-data/"+lookupName, nil); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -90,34 +88,9 @@ func openstackMetaGet(lookupName string, fileName string, fileMode os.FileMode) 
 	}
 }
 
-// openstackGet requests and extracts the requested URL
-func openstackGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("OpenStack: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("OpenStack: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("OpenStack: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("OpenStack: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
 // SSH keys:
-func (p *ProviderOpenstack) handleSSH() error {
-	sshKeys, err := openstackGet(metaDataURL + "public-keys/0/openssh-key")
+func (p *ProviderOpenstack) handleSSH(ctx context.Context) error {
+	sshKeys, err := get(ctx, ec2Base+"latest/meta-data/public-keys/0/openssh-key", nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}

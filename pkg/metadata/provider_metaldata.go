@@ -1,19 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path"
-	"time"
 )
 
-const (
-	metaldataMetaDataURL = "http://metaldata/get/meta/"
-	metaldataUserDataURL = "http://metaldata/get/user"
-)
+// metaldataBase is the Metaldata service (a var so tests can override it)
+var metaldataBase = "http://metaldata/get/"
 
 // ProviderMetaldata is the type implementing the Provider interface for Metaldata
 type ProviderMetaldata struct {
@@ -29,19 +25,19 @@ func (p *ProviderMetaldata) String() string {
 }
 
 // Probe checks if we are running on Metaldata
-func (p *ProviderMetaldata) Probe() bool {
+func (p *ProviderMetaldata) Probe(ctx context.Context) bool {
 	log.Println("Metaldata: Probing...")
 	// Getting the hostname should always work...
-	_, err := metaldataGet(metaldataMetaDataURL + "hostname")
+	_, err := get(ctx, metaldataBase+"meta/hostname", nil)
 	return err == nil
 }
 
 // Extract gets both the Metaldata specific and generic userdata
-func (p *ProviderMetaldata) Extract() ([]byte, error) {
+func (p *ProviderMetaldata) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := metaldataGet(metaldataMetaDataURL + "hostname")
+	hostname, err := get(ctx, metaldataBase+"meta/hostname", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Metaldata: %w", err)
 	}
 	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
@@ -49,27 +45,27 @@ func (p *ProviderMetaldata) Extract() ([]byte, error) {
 	}
 
 	// public ipv4
-	metaldataMetaGet("public-ipv4", "public_ipv4", 0644)
+	metaldataMetaGet(ctx, "public-ipv4", "public_ipv4", 0644)
 
 	// private ipv4
-	metaldataMetaGet("private-ipv4", "private_ipv4", 0644)
+	metaldataMetaGet(ctx, "private-ipv4", "private_ipv4", 0644)
 
 	// failure domain
-	metaldataMetaGet("failure-domain", "failure_domain", 0644)
+	metaldataMetaGet(ctx, "failure-domain", "failure_domain", 0644)
 
 	// id
-	metaldataMetaGet("machine-id", "machine_id", 0644)
+	metaldataMetaGet(ctx, "machine-id", "machine_id", 0644)
 
 	// type
-	metaldataMetaGet("machine-type", "machine_type", 0644)
+	metaldataMetaGet(ctx, "machine-type", "machine_type", 0644)
 
 	// ssh
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("Metaldata: Failed to get ssh data: %s", err)
 	}
 
 	// Generic userdata
-	userData, err := metaldataGet(metaldataUserDataURL)
+	userData, err := get(ctx, metaldataBase+"user", nil)
 	if err != nil {
 		log.Printf("Metaldata: Failed to get user-data: %s", err)
 		// This is not an error
@@ -79,8 +75,8 @@ func (p *ProviderMetaldata) Extract() ([]byte, error) {
 }
 
 // lookup a value (lookupName) in Metaldata metaservice and store in given fileName
-func metaldataMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := metaldataGet(metaldataMetaDataURL + lookupName); err == nil {
+func metaldataMetaGet(ctx context.Context, lookupName string, fileName string, fileMode os.FileMode) {
+	if lookupValue, err := get(ctx, metaldataBase+"meta/"+lookupName, nil); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -93,34 +89,9 @@ func metaldataMetaGet(lookupName string, fileName string, fileMode os.FileMode) 
 	}
 }
 
-// metaldataGet requests and extracts the requested URL
-func metaldataGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Metaldata: http.NewRequest failed: %s", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Metaldata: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("Metaldata: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("Metaldata: Failed to read http response: %s", err)
-	}
-	return body, nil
-}
-
 // SSH keys:
-func (p *ProviderMetaldata) handleSSH() error {
-	sshKeys, err := metaldataGet(metaldataMetaDataURL + "authorized-keys")
+func (p *ProviderMetaldata) handleSSH(ctx context.Context) error {
+	sshKeys, err := get(ctx, metaldataBase+"meta/authorized-keys", nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}
