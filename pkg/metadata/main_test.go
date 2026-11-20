@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -212,5 +213,19 @@ func assertContent(t *testing.T, path, expected string) {
 	}
 	if !bytes.Equal(file, []byte(expected)) {
 		t.Fatalf("%v: expected %v but has %v", path, expected, string(file))
+	}
+}
+
+func TestKernelHostname(t *testing.T) {
+	for in, want := range map[string]string{
+		"host\n":                          "host",
+		strings.Repeat("a", 63):           strings.Repeat("a", 63),
+		strings.Repeat("a", 64):           strings.Repeat("a", 64),
+		"inst." + strings.Repeat("b", 60): "inst",
+		strings.Repeat("c", 70):           strings.Repeat("c", 63),
+	} {
+		if got := kernelHostname(in); got != want {
+			t.Errorf("kernelHostname(%q) = %q; want %q", in, got, want)
+		}
 	}
 }

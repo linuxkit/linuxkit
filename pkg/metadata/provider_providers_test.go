@@ -328,3 +328,20 @@ func TestHetznerIgnoresEC2Routes(t *testing.T) {
 	}
 	checkSleeps(t) // 404 is final, no retry
 }
+
+func TestGCPShortHostname(t *testing.T) {
+	for served, want := range map[string]string{
+		"inst": "inst",
+		"imds-standalone-gcp.australia-southeast1-b.c.linuxkit-515111.internal": "imds-standalone-gcp",
+	} {
+		c := providerCases()[0]
+		c.paths["instance/hostname"] = served
+		ctx := serveProvider(t, c, 0)
+		if _, err := c.p.Extract(ctx); err != nil {
+			t.Fatalf("Extract: %v", err)
+		}
+		if got, err := os.ReadFile(path.Join(ConfigPath, Hostname)); err != nil || string(got) != want {
+			t.Errorf("served %q: hostname %q, %v; want %q", served, got, err, want)
+		}
+	}
+}

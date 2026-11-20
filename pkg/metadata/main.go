@@ -191,13 +191,30 @@ func main() {
 	// do this early and don't really want another container for it.
 	hostname, err := os.ReadFile(path.Join(ConfigPath, Hostname))
 	if err == nil {
-		err := syscall.Sethostname(hostname)
+		name := kernelHostname(string(hostname))
+		if name != strings.TrimSpace(string(hostname)) {
+			log.Printf("Hostname %q does not fit the kernel, using %q", strings.TrimSpace(string(hostname)), name)
+		}
+		err := syscall.Sethostname([]byte(name))
 		if err != nil {
 			log.Printf("Failed to set hostname: %s", err)
 		} else {
-			log.Printf("Set hostname to: %s", string(hostname))
+			log.Printf("Set hostname to: %s", name)
 		}
 	}
+}
+
+// kernelHostname makes name fit the kernel's 64-byte hostname limit: a name
+// too long keeps its first label, cut to 63 bytes (a DNS label's limit) if needed
+func kernelHostname(name string) string {
+	name = strings.TrimSpace(name)
+	if len(name) > 64 {
+		name, _, _ = strings.Cut(name, ".")
+		if len(name) > 63 {
+			name = name[:63]
+		}
+	}
+	return name
 }
 
 // If the userdata is a json file, create a directory/file hierarchy.
