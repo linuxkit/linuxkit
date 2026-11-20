@@ -1,6 +1,8 @@
 # LinuxKit with bare metal on Equinix Metal
 
-[Equinix Metal](http://deploy.equinix.com) is a bare metal hosting provider.
+[Equinix Metal](http://deploy.equinix.com) shut down on 30 June 2026; see the [end-of-service FAQ](https://docs.equinix.com/metal/eos-faq).
+The `equinixmetal` metadata provider and automatic network bonding configuration have been removed.
+The CLI commands remain, and the instructions below describe their existing usage.
 
 You will need to [create an Equinix Metal account] and a project to
 put this new machine into. You will also need to [create an API key]
@@ -20,10 +22,7 @@ device ID on subsequent `linuxkit run` invocations to re-use an
 existing machine. These subsequent runs will update the iPXE data so
 you can boot alternative kernels on an existing machine.
 
-There is an example YAML file for [x86_64](../examples/equinixmetal.yml) and
-an additional YAML for [arm64](../examples/equinixmetal.arm64.yml) servers
-which provide both access to the serial console and via ssh and
-configures bonding for network devices via metadata (if supported).
+There are example YAML files for [x86_64](../examples/platform-equinixmetal.yml) and [arm64](../examples/platform-equinixmetal.arm64.yml) servers with serial console and SSH access.
 
 For x86_64 builds for Intel servers we strongly recommend adding
 `ucode: intel-ucode.cpio` to the kernel section in the YAML. This

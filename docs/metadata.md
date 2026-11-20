@@ -91,49 +91,87 @@ Alternatively `linuxkit metadata create meta.iso STRING` will produce
 a correctly formatted ISO image which can be passed to a VM as a CDROM
 device for consumption by the `pkg/metadata` component.
 
+## Provider detection
+
+Without a provider list, metadata first reads local DMI/SMBIOS identifiers and the hypervisor UUID.
+If these identify a supported cloud, it probes only that cloud's provider.
+If the probe fails, it logs an error and tries CDROM data without probing other network providers.
+Azure, Oracle Cloud and Alibaba Cloud are recognised but have no metadata provider; they skip network probes and go straight to CDROM.
+
+Unknown hosts, including VMware, plain QEMU/KVM and systems without DMI, probe providers in parallel with a shared 30-second deadline.
+Network providers rank in this order: aws/openstack, gcp, hetzner, scaleway, vultr, digitalocean, metaldata.
+A successful network probe wins once all higher-ranked probes have failed and VMware guestinfo has finished without data.
+Other probes are cancelled, and any other providers that have already answered are logged as conflicts at error level.
+Populated VMware guestinfo takes priority over every network provider; see [VMware](#vmware).
+If no probe succeeds, metadata tries CDROM data.
+
+AWS and OpenStack share one probe of `/latest/meta-data/hostname` at `169.254.169.254`, using the AWS token flow.
+After that succeeds, a successful request to `/openstack/latest/meta_data.json` selects OpenStack.
+An HTTP error from that request selects AWS, preserving support for other EC2-compatible services.
+A network error is retried until the deadline and does not identify the service as AWS.
+
+To select providers explicitly, set the metadata container's command, for example `command: ["/usr/bin/metadata", "gcp", "cdrom"]`.
+The list overrides DMI selection.
+If DMI identifies a supported cloud whose provider is absent from the list, metadata logs a warning and uses the list.
+Unknown or recognised-but-unsupported clouds do not cause a mismatch warning.
+Explicit lists retain their existing precedence: network providers first, then local VMware/CDROM providers, then `file=PATH` providers, preserving list order within each group.
+These probes run sequentially, each with its own 30-second budget.
+Only providers named in the list are tried.
+
+Every metadata HTTP request retries network errors, such as refused connections, resets and timeouts, with delays of 1, 2, 4, then 5 seconds between attempts until its deadline.
+Each request has a two-second timeout; HTTP errors are final and are not retried.
+These rules also apply to metadata extraction, EC2 disambiguation and Scaleway's privileged-port userdata requests.
+Parallel detection shares one 30-second budget; extraction gets a fresh 30-second budget for all its requests.
+An unknown host without a metadata service can therefore wait about 30 seconds before trying CDROM.
+Use an explicit `cdrom` or `file=PATH` list to skip network probing.
+
+Before setting the kernel hostname, metadata trims whitespace.
+A hostname longer than 64 bytes is reduced to its first DNS label, cut to 63 bytes if that label is still too long.
+This adjustment is logged and leaves `/run/config/hostname` unchanged.
+GCP always writes the short hostname to that file, so readers that previously received a GCP FQDN now receive its first label.
+
+The `equinixmetal` provider and its automatic network bonding configuration have been removed.
+Remove `equinixmetal` from explicit provider lists; it is now rejected as an unrecognised provider.
+The `linuxkit run` and `push equinixmetal` commands are unchanged.
+
 # Providers
 
-Below is a list of supported providers and notes on what is supported. We will add more over time.
+The following sections describe provider-specific metadata and userdata handling.
 
 
 ## GCP
 
-GCP metadata is reached via a well known URL
-(`http://metadata.google.internal/`) and currently
-we extract the hostname and populate the
-`/run/config/ssh/authorized_keys` from metadata. In the future we'll
-add more complete SSH support.
+GCP metadata is reached at `http://metadata.google.internal/computeMetadata/v1/`.
+The provider writes the first label of `instance/hostname` to `/run/config/hostname` and populates `/run/config/ssh/authorized_keys` from metadata.
 
-GCP userdata is extracted from `/computeMetadata/v1/instance/attributes/userdata`
-and made available in `/run/config/userdata`.
+GCP userdata is extracted from `/computeMetadata/v1/instance/attributes/user-data` and made available in `/run/config/userdata`.
 
 ## AWS
 
-AWS metadata is reached via the following URL
-(`http://169.254.169.254/latest/meta-data/`) and currently we extract the
-hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
+AWS metadata is reached at `http://169.254.169.254/latest/meta-data/`.
+The provider extracts the hostname and populates `/run/config/ssh/authorized_keys` from metadata.
 
-AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
-and made available in `/run/config/userdata`.
+AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and made available in `/run/config/userdata`.
 
-Requests use IMDSv2 session tokens. If the token request gets an HTTP error,
-the provider falls back to IMDSv1.
-
-Network errors, such as a refused connection or a timeout, are retried with
-backoff for up to 30 seconds from the first AWS request. This covers IMDS not
-answering yet early in boot. AWS is probed first, so a host on another platform
-with no metadata service can wait up to 30 seconds here. To avoid that, list
-the providers to use in the metadata container's command, for example
-`command: ["/usr/bin/metadata", "gcp"]`.
+Requests use IMDSv2 session tokens.
+If the token request gets an HTTP error, the provider falls back to IMDSv1.
+Network errors follow the shared [retry and deadline rules](#provider-detection).
 
 ## Hetzner
 
-Hetzner metadata is reached via the following URL
-(`http://169.254.169.254/latest/meta-data/`) and currently we extract the
-hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
+Hetzner metadata is reached at `http://169.254.169.254/hetzner/v1/metadata/`.
+The provider reads `hostname`, `instance-id`, `public-ipv4` and `public-keys`, writing the hostname, instance ID, public IPv4 address and SSH authorized keys under `/run/config`.
+It no longer uses the EC2-compatible `/latest/` routes and no longer writes `/run/config/local_ipv4`.
 
-Hetzner userdata is extracted from `http://169.254.169.254/latest/user-data` and
-and made available in `/run/config/userdata`.
+Hetzner userdata is extracted from `http://169.254.169.254/hetzner/v1/userdata` and made available in `/run/config/userdata`.
+
+## VMware
+
+VMware guestinfo is supported on Linux 386 and amd64 only.
+On unknown hosts, populated `guestinfo.metadata` or `guestinfo.userdata` wins immediately over network providers and cancels their probes.
+A network provider that has already answered is logged as a conflict.
+This changes the previous network-first selection order when both sources have data.
+On other architectures, metadata uses network providers and then CDROM; explicit lists can also use `file=PATH`.
 
 ## HyperKit
 
