@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path"
 )
@@ -58,7 +60,11 @@ func (p *ProviderHetzner) Extract(ctx context.Context) ([]byte, error) {
 	// Generic userdata
 	userData, err := get(ctx, hetznerBase+"userdata", nil)
 	if err != nil {
-		log.Printf("Hetzner: Failed to get user-data: %s", err)
+		// Hetzner answers 204 when the server has no userdata
+		var se *statusError
+		if !errors.As(err, &se) || se.Code != http.StatusNoContent {
+			log.Printf("Hetzner: Failed to get user-data: %s", err)
+		}
 		// This is not an error
 		return nil, nil
 	}
