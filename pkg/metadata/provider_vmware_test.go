@@ -38,6 +38,15 @@ func TestVMwareProbeNotVM(t *testing.T) {
 	}
 }
 
+func TestVMwareIsVMRecoversFault(t *testing.T) {
+	orig := vmwareIsVirtualWorld
+	vmwareIsVirtualWorld = func(bool) (bool, error) { panic("signal SIGSEGV") }
+	t.Cleanup(func() { vmwareIsVirtualWorld = orig })
+	if isVM, err := vmwareIsVM(); isVM || err == nil || err.Error() != "vmware backdoor faulted" {
+		t.Errorf("vmwareIsVM: %v, %v; want false, \"vmware backdoor faulted\"", isVM, err)
+	}
+}
+
 func TestVMwareProbeEncodings(t *testing.T) {
 	var gz bytes.Buffer
 	zw := gzip.NewWriter(&gz)
