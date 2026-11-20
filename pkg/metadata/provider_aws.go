@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sync"
 )
 
 // ProviderAWS is the type implementing the Provider interface for AWS
@@ -97,35 +98,74 @@ func awsMetaGet(ctx context.Context, lookupName string, fileName string, fileMod
 // refresh is needed. Only an HTTP answer is cached; any status other than 200
 // means IMDSv1 (empty token).
 var (
+	awsTokenMu      sync.Mutex
+	awsTokenPending chan struct{}
 	awsTokenFetched bool
 	awsToken        string
 )
 
 // awsGet requests and extracts the requested URL, with an IMDSv2 token if the service gives one
 func awsGet(ctx context.Context, url string) ([]byte, error) {
-	if !awsTokenFetched {
+	token, err := awsGetToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var hdr http.Header
+	if token != "" {
+		hdr = http.Header{}
+		hdr.Set("X-aws-ec2-metadata-token", token)
+	}
+	return get(ctx, url, hdr)
+}
+
+// awsGetToken shares one token request; waiters can cancel independently.
+func awsGetToken(ctx context.Context) (string, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		awsTokenMu.Lock()
+		if awsTokenFetched {
+			token := awsToken
+			awsTokenMu.Unlock()
+			return token, nil
+		}
+		if pending := awsTokenPending; pending != nil {
+			awsTokenMu.Unlock()
+			select {
+			case <-ctx.Done():
+				return "", ctx.Err()
+			case <-pending:
+				continue
+			}
+		}
+		awsTokenPending = make(chan struct{})
+		awsTokenMu.Unlock()
+
 		hdr := http.Header{}
 		hdr.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
-		token, err := fetch(ctx, http.MethodPut, ec2Base+"latest/api/token", hdr)
+		body, err := fetch(ctx, http.MethodPut, ec2Base+"latest/api/token", hdr)
+		token := ""
 		var se *statusError
 		switch {
 		case err == nil:
 			log.Printf("AWS: Using IMDSv2")
-			awsToken = string(token)
+			token = string(body)
 		case errors.As(err, &se):
 			log.Printf("AWS: IMDSv2 token request returned %d, falling back to IMDSv1", se.Code)
-		default:
-			return nil, err
+			err = nil
 		}
-		awsTokenFetched = true
-	}
 
-	var hdr http.Header
-	if awsToken != "" {
-		hdr = http.Header{}
-		hdr.Set("X-aws-ec2-metadata-token", awsToken)
+		awsTokenMu.Lock()
+		if err == nil {
+			awsTokenFetched, awsToken = true, token
+		}
+		close(awsTokenPending)
+		awsTokenPending = nil
+		awsTokenMu.Unlock()
+		return token, err
 	}
-	return get(ctx, url, hdr)
 }
 
 // SSH keys:

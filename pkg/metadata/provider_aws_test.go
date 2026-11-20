@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -129,4 +130,141 @@ func TestAWSGetNotFoundNoRetry(t *testing.T) {
 		t.Fatalf("want 1 GET, got %d", gets.Load())
 	}
 	checkSleeps(t)
+}
+
+func TestAWSTokenConcurrent(t *testing.T) {
+	ctx := parallelBudget(t)
+	gate, release := context.WithCancel(context.Background())
+	defer release()
+	started := make(chan struct{})
+	var puts atomic.Int32
+	probeIMDS(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/latest/api/token" {
+			if puts.Add(1) == 1 {
+				close(started)
+			}
+			select {
+			case <-gate.Done():
+			case <-r.Context().Done():
+				return
+			}
+			w.Write([]byte("tok"))
+			return
+		}
+		if r.Header.Get("X-aws-ec2-metadata-token") != "tok" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		ok(w, r)
+	})
+	const callers = 16
+	results := make(chan error, callers)
+	for i := 0; i < callers; i++ {
+		go func() {
+			body, err := awsGet(ctx, ec2Base+"latest/meta-data/hostname")
+			if err == nil && string(body) != "ok" {
+				err = errors.New("wrong metadata body")
+			}
+			results <- err
+		}()
+	}
+	<-started
+	time.Sleep(50 * time.Millisecond)
+	release()
+	for i := 0; i < callers; i++ {
+		if err := <-results; err != nil {
+			t.Errorf("concurrent awsGet: %v", err)
+		}
+	}
+	if puts.Load() != 1 {
+		t.Fatalf("want one shared token PUT, got %d", puts.Load())
+	}
+}
+
+func TestAWSTokenWaiterCancelled(t *testing.T) {
+	ctx := parallelBudget(t)
+	gate, release := context.WithCancel(context.Background())
+	defer release()
+	started := make(chan struct{})
+	probeIMDS(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/latest/api/token" {
+			close(started)
+			select {
+			case <-gate.Done():
+			case <-r.Context().Done():
+				return
+			}
+		}
+		ok(w, r)
+	})
+	producer := make(chan error, 1)
+	go func() {
+		_, err := awsGet(ctx, ec2Base+"latest/meta-data/hostname")
+		producer <- err
+	}()
+	<-started
+	waitCtx, cancel := context.WithCancel(ctx)
+	waiter := make(chan error, 1)
+	go func() {
+		_, err := awsGet(waitCtx, ec2Base+"latest/meta-data/hostname")
+		waiter <- err
+	}()
+	cancel()
+	select {
+	case err := <-waiter:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("cancelled token waiter: %v", err)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Error("cancelled token waiter blocked behind token request")
+	}
+	release()
+	if err := <-producer; err != nil {
+		t.Fatalf("token producer: %v", err)
+	}
+}
+
+func TestAWSTokenProducerCancelled(t *testing.T) {
+	ctx := parallelBudget(t)
+	started := make(chan struct{})
+	var puts atomic.Int32
+	probeIMDS(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/latest/api/token" {
+			if puts.Add(1) == 1 {
+				close(started)
+				<-r.Context().Done()
+				return
+			}
+			w.Write([]byte("tok"))
+			return
+		}
+		if r.Header.Get("X-aws-ec2-metadata-token") != "tok" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		ok(w, r)
+	})
+	producerCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	producer := make(chan error, 1)
+	go func() {
+		_, err := awsGet(producerCtx, ec2Base+"latest/meta-data/hostname")
+		producer <- err
+	}()
+	<-started
+	waiter := make(chan error, 1)
+	go func() {
+		_, err := awsGet(ctx, ec2Base+"latest/meta-data/hostname")
+		waiter <- err
+	}()
+	cancel()
+	if err := <-producer; !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled producer: %v", err)
+	}
+	if err := <-waiter; err != nil {
+		t.Fatalf("waiter did not retry after cancelled producer: %v", err)
+	}
+	if puts.Load() != 2 {
+		t.Fatalf("want a fresh token request after cancellation, got %d PUTs", puts.Load())
+	}
 }
