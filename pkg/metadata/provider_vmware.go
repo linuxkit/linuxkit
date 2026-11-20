@@ -1,4 +1,4 @@
-//go:build linux && 386 && amd64
+//go:build linux && (386 || amd64)
 
 package main
 
@@ -24,6 +24,12 @@ const (
 	guestVendorData = "guestinfo.vendordata"
 )
 
+// vmwareIsVM and vmwareGuestInfo talk to the VMware backdoor; tests replace them.
+// IsVirtualWorld ignores access errors because the container has no
+// CAP_SYS_RAWIO, and VMware allows backdoor port access from user mode anyway.
+var vmwareIsVM = func() (bool, error) { return vmcheck.IsVirtualWorld(true) }
+var vmwareGuestInfo = func(key string) (string, error) { return rpcvmx.NewConfig().String(key, "") }
+
 // ProviderVMware implements the Provider interface for VMware guestinfo api
 type ProviderVMware struct{}
 
@@ -39,7 +45,7 @@ func (p *ProviderVMware) String() string {
 
 // Probe checks if we are running on VMware and either userdata or metadata is set
 func (p *ProviderVMware) Probe(ctx context.Context) bool {
-	isVM, err := vmcheck.IsVirtualWorld()
+	isVM, err := vmwareIsVM()
 	if err != nil || !isVM {
 		return false
 	}
@@ -88,23 +94,21 @@ func (p *ProviderVMware) Extract(ctx context.Context) ([]byte, error) {
 
 // vmwareGet gets and extracts the guestinfo data
 func vmwareGet(name string) ([]byte, error) {
-	config := rpcvmx.NewConfig()
-
-	// get the gusest info value
-	out, err := config.String(name, "")
+	// get the guest info value
+	out, err := vmwareGuestInfo(name)
 	if err != nil {
 		log.Debugf("Getting guest info %s failed: error %s", name, err)
 		return nil, err
 	}
 
-	enc, err := config.String(name+".encoding", "")
+	enc, err := vmwareGuestInfo(name + ".encoding")
 	if err != nil {
 		log.Debugf("Getting guest info %s.encoding failed: error %s", name, err)
 		return nil, err
 	}
 
 	switch strings.TrimSuffix(enc, "\n") {
-	case " ":
+	case "":
 		return []byte(strings.TrimSuffix(out, "\n")), nil
 	case "base64":
 		r := base64.NewDecoder(base64.StdEncoding, strings.NewReader(out))
