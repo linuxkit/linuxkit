@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -349,6 +351,51 @@ func TestChooseUnknownProbesAll(t *testing.T) {
 	f.onlyConstructed(t, "ec2", "gcp", "hetzner", "scaleway", "vultr", "digitalocean", "metaldata", "vmware")
 	if !strings.Contains(logs.String(), "metadata: DMI unknown, probing aws/openstack, gcp, hetzner, scaleway, vultr, digitalocean, metaldata, vmware in parallel (30s)") {
 		t.Fatalf("missing parallel decision in %s", logs.String())
+	}
+}
+
+func TestChooseXenUUIDOnlyReachesOpenStack(t *testing.T) {
+	for _, uuid := range []string{"ec2e1a45-1234-4567-89ab-0123456789ab", "45e12aec-1234-4567-89ab-0123456789ab"} {
+		t.Run(uuid, func(t *testing.T) {
+			f := fakeChoices(t)
+			oldRoot, oldUUID := dmiRoot, hypervisorUUIDPath
+			dmiRoot, hypervisorUUIDPath = t.TempDir(), path.Join(t.TempDir(), "uuid")
+			t.Cleanup(func() { dmiRoot, hypervisorUUIDPath = oldRoot, oldUUID })
+			for name, value := range map[string]string{"sys_vendor": "Xen", "product_uuid": uuid} {
+				if err := os.WriteFile(path.Join(dmiRoot, name), []byte(value), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := os.WriteFile(hypervisorUUIDPath, []byte("ec2a1b2c-0000-0000-0000-000000000000"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			var disambiguations atomic.Int32
+			probeIMDS(t, func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/latest/api/token":
+					w.WriteHeader(http.StatusMethodNotAllowed)
+				case "/latest/meta-data/hostname":
+					w.Write([]byte("openstack-host"))
+				case "/openstack/latest/meta_data.json":
+					disambiguations.Add(1)
+					w.Write([]byte(`{}`))
+				default:
+					w.WriteHeader(http.StatusNotFound)
+				}
+			})
+			newEC2 = func() Provider { return NewEC2() }
+			got := chooseProvider(nil, identify())
+			for _, name := range []string{"gcp", "hetzner", "scaleway", "vultr", "digitalocean", "metaldata", "vmware"} {
+				select {
+				case <-f.providers[name].done:
+				case <-time.After(5 * time.Second):
+					t.Fatalf("%s probe did not finish", name)
+				}
+			}
+			if got == nil || got.String() != "openstack" || disambiguations.Load() != 1 {
+				t.Fatalf("provider = %v, disambiguations = %d; want openstack, 1", got, disambiguations.Load())
+			}
+		})
 	}
 }
 

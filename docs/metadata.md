@@ -97,6 +97,8 @@ Without a provider list, metadata first reads local DMI/SMBIOS identifiers and t
 If these identify a supported cloud, it probes only that cloud's provider.
 If the probe fails, it logs an error and tries CDROM data without probing other network providers.
 Azure, Oracle Cloud and Alibaba Cloud are recognised but have no metadata provider; they skip network probes and go straight to CDROM.
+EC2-looking UUIDs alone do not identify AWS, even on Xen; those hosts use the unknown-host probes below.
+Exact cloud markers take precedence, while Amazon EC2 vendor and instance-ID asset tags still identify AWS.
 
 Unknown hosts, including VMware, plain QEMU/KVM and systems without DMI, probe providers in parallel with a shared 30-second deadline.
 Network providers rank in this order: aws/openstack, gcp, hetzner, scaleway, vultr, digitalocean, metaldata.
