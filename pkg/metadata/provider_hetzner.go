@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,16 +26,16 @@ func (p *ProviderHetzner) String() string {
 }
 
 // Probe checks if we are running on Hetzner
-func (p *ProviderHetzner) Probe() bool {
+func (p *ProviderHetzner) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
-	_, err := hetznerGet(metaDataURL + "hostname")
+	_, err := hetznerGet(ec2Base + "latest/meta-data/hostname")
 	return err == nil
 }
 
 // Extract gets both the Hetzner specific and generic userdata
-func (p *ProviderHetzner) Extract() ([]byte, error) {
+func (p *ProviderHetzner) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := hetznerGet(metaDataURL + "hostname")
+	hostname, err := hetznerGet(ec2Base + "latest/meta-data/hostname")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func (p *ProviderHetzner) Extract() ([]byte, error) {
 	}
 
 	// Generic userdata
-	userData, err := hetznerGet(userDataURL)
+	userData, err := hetznerGet(ec2Base + "latest/user-data")
 	if err != nil {
 		log.Printf("Hetzner: Failed to get user-data: %s", err)
 		// This is not an error
@@ -72,7 +73,7 @@ func (p *ProviderHetzner) Extract() ([]byte, error) {
 
 // lookup a value (lookupName) in hetzner metaservice and store in given fileName
 func hetznerMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := hetznerGet(metaDataURL + lookupName); err == nil {
+	if lookupValue, err := hetznerGet(ec2Base + "latest/meta-data/" + lookupName); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -112,7 +113,7 @@ func hetznerGet(url string) ([]byte, error) {
 
 // SSH keys:
 func (p *ProviderHetzner) handleSSH() error {
-	sshKeysJSON, err := hetznerGet(metaDataURL + "public-keys")
+	sshKeysJSON, err := hetznerGet(ec2Base + "latest/meta-data/public-keys")
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -28,14 +29,14 @@ func (p *ProviderVultr) String() string {
 }
 
 // Probe checks if we are running on Vultr
-func (p *ProviderVultr) Probe() bool {
+func (p *ProviderVultr) Probe(ctx context.Context) bool {
 	// Getting the index should always work...
 	_, err := vultrGet(vultrMetaDataURL)
 	return err == nil
 }
 
 // Extract gets both the Vultr specific and generic userdata
-func (p *ProviderVultr) Extract() ([]byte, error) {
+func (p *ProviderVultr) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
 	hostname, err := vultrGet(vultrMetaDataURL + "hostname")
 	if err != nil {

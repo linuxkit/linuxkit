@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -39,7 +40,7 @@ func (p *ProviderScaleway) String() string {
 }
 
 // Probe checks if we are running on Scaleway
-func (p *ProviderScaleway) Probe() bool {
+func (p *ProviderScaleway) Probe(ctx context.Context) bool {
 	// Getting the conf should always work...
 	_, err := scalewayGet(scalewayMetadataURL + "conf")
 	if err != nil {
@@ -51,7 +52,7 @@ func (p *ProviderScaleway) Probe() bool {
 }
 
 // Extract gets both the Scaleway specific and generic userdata
-func (p *ProviderScaleway) Extract() ([]byte, error) {
+func (p *ProviderScaleway) Extract(ctx context.Context) ([]byte, error) {
 	metadata, err := scalewayGet(scalewayMetadataURL + "conf")
 	if err != nil {
 		return nil, fmt.Errorf("Scaleway: Failed to get conf: %s", err)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -29,7 +30,7 @@ func (p *ProviderMetaldata) String() string {
 }
 
 // Probe checks if we are running on Metaldata
-func (p *ProviderMetaldata) Probe() bool {
+func (p *ProviderMetaldata) Probe(ctx context.Context) bool {
 	log.Println("Metaldata: Probing...")
 	// Getting the hostname should always work...
 	_, err := metaldataGet(metaldataMetaDataURL + "hostname")
@@ -37,7 +38,7 @@ func (p *ProviderMetaldata) Probe() bool {
 }
 
 // Extract gets both the Metaldata specific and generic userdata
-func (p *ProviderMetaldata) Extract() ([]byte, error) {
+func (p *ProviderMetaldata) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
 	hostname, err := metaldataGet(metaldataMetaDataURL + "hostname")
 	if err != nil {

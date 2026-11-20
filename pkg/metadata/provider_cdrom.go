@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -135,12 +136,12 @@ func (p *ProviderCDROM) String() string {
 }
 
 // Probe checks if the CD has the right file
-func (p *ProviderCDROM) Probe() bool {
+func (p *ProviderCDROM) Probe(ctx context.Context) bool {
 	return len(p.userdata) != 0
 }
 
 // Extract gets both the CDROM specific and generic userdata
-func (p *ProviderCDROM) Extract() ([]byte, error) {
+func (p *ProviderCDROM) Extract(ctx context.Context) ([]byte, error) {
 	return p.userdata, p.err
 }
 

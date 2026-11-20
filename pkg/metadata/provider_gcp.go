@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -30,14 +31,14 @@ func (p *ProviderGCP) String() string {
 }
 
 // Probe checks if we are running on GCP
-func (p *ProviderGCP) Probe() bool {
+func (p *ProviderGCP) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
 	_, err := gcpGet(instance + "hostname")
 	return err == nil
 }
 
 // Extract gets both the GCP specific and generic userdata
-func (p *ProviderGCP) Extract() ([]byte, error) {
+func (p *ProviderGCP) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
 	hostname, err := gcpGet(instance + "hostname")
 	if err != nil {

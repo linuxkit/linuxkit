@@ -4,6 +4,7 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -37,7 +38,7 @@ func (p *ProviderVMware) String() string {
 }
 
 // Probe checks if we are running on VMware and either userdata or metadata is set
-func (p *ProviderVMware) Probe() bool {
+func (p *ProviderVMware) Probe(ctx context.Context) bool {
 	isVM, err := vmcheck.IsVirtualWorld()
 	if err != nil || !isVM {
 		return false
@@ -51,7 +52,7 @@ func (p *ProviderVMware) Probe() bool {
 
 // Extract gets the host specific metadata, generic userdata and if set vendordata
 // This function returns error if it fails to write metadata or vendordata to disk
-func (p *ProviderVMware) Extract() ([]byte, error) {
+func (p *ProviderVMware) Extract(ctx context.Context) ([]byte, error) {
 	// Get vendor data, if empty do not fail
 	vendorData, err := vmwareGet(guestVendorData)
 	if err != nil {

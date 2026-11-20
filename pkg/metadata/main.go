@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"os"
@@ -21,14 +22,13 @@ const (
 
 	// SSH is the path where sshd configuration from the provider is stored
 	SSH = "ssh"
-
-	// Standard AWS-compatible Metadata URLs
-	userDataURL = "http://169.254.169.254/latest/user-data"
-	metaDataURL = "http://169.254.169.254/latest/meta-data/"
 )
 
 var (
 	defaultLogFormatter = &log.TextFormatter{}
+
+	// ec2Base is the AWS-compatible metadata service (a var so tests can override it)
+	ec2Base = "http://169.254.169.254/"
 )
 
 // infoFormatter overrides the default format for Info() log events to
@@ -49,11 +49,25 @@ type Provider interface {
 	String() string
 
 	// Probe returns true if the provider was detected.
-	Probe() bool
+	Probe(ctx context.Context) bool
 
 	// Extract user data. This may write some data, specific to a
 	// provider, to ConfigPath and should return the generic userdata.
-	Extract() ([]byte, error)
+	Extract(ctx context.Context) ([]byte, error)
+}
+
+// probe runs p.Probe with a fresh retry budget
+func probe(p Provider) bool {
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	return p.Probe(ctx)
+}
+
+// extract runs p.Extract with a fresh retry budget
+func extract(p Provider) ([]byte, error) {
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	return p.Extract(ctx)
 }
 
 // netProviders is a list of Providers offering metadata/userdata over the network
@@ -77,7 +91,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "equinixmetal", "metaldata", "vmware", "cdrom"}
+	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "metaldata", "vmware", "cdrom"}
 	args := flag.Args()
 	if len(args) > 0 {
 		providers = args
@@ -92,8 +106,6 @@ func main() {
 			netProviders = append(netProviders, NewHetzner())
 		case p == "openstack":
 			netProviders = append(netProviders, NewOpenstack())
-		case p == "equinixmetal":
-			netProviders = append(netProviders, NewEquinixMetal())
 		case p == "scaleway":
 			netProviders = append(netProviders, NewScaleway())
 		case p == "vultr":
@@ -125,9 +137,9 @@ func main() {
 	var err error
 	found := false
 	for _, p = range netProviders {
-		if p.Probe() {
+		if probe(p) {
 			log.Printf("%s: Probe succeeded", p)
-			userdata, err = p.Extract()
+			userdata, err = extract(p)
 			found = true
 			break
 		}
@@ -135,9 +147,9 @@ func main() {
 	if !found {
 		for _, p = range cdromProviders {
 			log.Printf("Trying %s", p.String())
-			if p.Probe() {
+			if probe(p) {
 				log.Printf("%s: Probe succeeded", p)
-				userdata, err = p.Extract()
+				userdata, err = extract(p)
 				found = true
 				break
 			}
@@ -146,9 +158,9 @@ func main() {
 	if !found {
 		for _, p = range fileProviders {
 			log.Printf("Trying file %s", p.String())
-			if p.Probe() {
+			if probe(p) {
 				log.Printf("%s: Probe succeeded", p)
-				userdata, err = p.Extract()
+				userdata, err = extract(p)
 				found = true
 				break
 			}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -28,14 +29,14 @@ func (p *ProviderDigitalOcean) String() string {
 }
 
 // Probe checks if we are running on DigitalOcean
-func (p *ProviderDigitalOcean) Probe() bool {
+func (p *ProviderDigitalOcean) Probe(ctx context.Context) bool {
 	// Getting the index should always work...
 	_, err := digitalOceanGet(digitalOceanMetaDataURL)
 	return err == nil
 }
 
 // Extract gets both the DigitalOcean specific and generic userdata
-func (p *ProviderDigitalOcean) Extract() ([]byte, error) {
+func (p *ProviderDigitalOcean) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
 	hostname, err := digitalOceanGet(digitalOceanMetaDataURL + "hostname")
 	if err != nil {
