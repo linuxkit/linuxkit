@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"runtime/debug"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -32,9 +33,12 @@ var vmwareIsVirtualWorld = vmcheck.IsVirtualWorld
 var vmwareGuestInfo = func(key string) (string, error) { return rpcvmx.NewConfig().String(key, "") }
 
 // vmwareIsVM reports whether we run on VMware. With
-// monitor_control.restrict_backdoor=TRUE the backdoor IN faults at CPL3; recover
-// so that metadata carries on instead of crashing.
+// monitor_control.restrict_backdoor=TRUE the backdoor IN raises #GP at CPL3,
+// delivered as SIGSEGV with si_code SI_KERNEL; the runtime's sigpanic throws
+// on that unless SetPanicOnFault is on, so turn it on (for this goroutine,
+// restored on return) and recover so that metadata carries on.
 var vmwareIsVM = func() (isVM bool, err error) {
+	defer debug.SetPanicOnFault(debug.SetPanicOnFault(true))
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("metadata: VMware backdoor faulted: %v", r)
