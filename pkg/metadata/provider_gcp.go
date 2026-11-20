@@ -44,7 +44,9 @@ func (p *ProviderGCP) Extract(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GCP: %w", err)
 	}
-	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
+	// GCP serves the FQDN, often longer than the kernel's 64 bytes; use the short name
+	short, _, _ := strings.Cut(strings.TrimSpace(string(hostname)), ".")
+	err = os.WriteFile(path.Join(ConfigPath, Hostname), []byte(short), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("GCP: Failed to write hostname: %s", err)
 	}
