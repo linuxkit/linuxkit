@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -70,14 +71,122 @@ func extract(p Provider) ([]byte, error) {
 	return p.Extract(ctx)
 }
 
-// netProviders is a list of Providers offering metadata/userdata over the network
-var netProviders []Provider
+var newProvider = map[string]func() Provider{
+	"aws":          func() Provider { return NewAWS() },
+	"gcp":          func() Provider { return NewGCP() },
+	"hetzner":      func() Provider { return NewHetzner() },
+	"openstack":    func() Provider { return NewOpenstack() },
+	"scaleway":     func() Provider { return NewScaleway() },
+	"vultr":        func() Provider { return NewVultr() },
+	"digitalocean": func() Provider { return NewDigitalOcean() },
+	"metaldata":    func() Provider { return NewMetalData() },
+}
 
-// cdromProviders is a list of Providers offering metadata/userdata data via CDROM
-var cdromProviders []Provider
+var newEC2 = func() Provider { return NewEC2() }
+var newVMware = func() Provider {
+	if p := NewVMware(); p != nil {
+		return p
+	}
+	return nil
+}
+var listCDROMs = ListCDROMs
 
-// fileProviders is a list of Providers offering metadata/userdata in a file on the filesystem
-var fileProviders []Provider
+func mismatchWarning(plat platform, args []string) string {
+	if plat.provider == "" {
+		return ""
+	}
+	for _, arg := range args {
+		if arg == plat.provider {
+			return ""
+		}
+	}
+	return fmt.Sprintf("metadata: DMI says %s, but the command line lists %s; using the command line", plat.provider, strings.Join(args, ", "))
+}
+
+func chooseProvider(args []string, plat platform) Provider {
+	if len(args) > 0 {
+		// Validate the whole list before constructing or probing any provider.
+		for _, arg := range args {
+			if newProvider[arg] == nil && arg != "vmware" && arg != "cdrom" && !strings.HasPrefix(arg, "file=") {
+				log.Fatalf("Unrecognised metadata provider: %s", arg)
+			}
+		}
+		if warning := mismatchWarning(plat, args); warning != "" {
+			log.Warn(warning)
+		}
+		var network, local, files []Provider
+		for _, arg := range args {
+			switch {
+			case newProvider[arg] != nil:
+				network = append(network, newProvider[arg]())
+			case arg == "vmware":
+				if p := newVMware(); p != nil {
+					local = append(local, p)
+				}
+			case arg == "cdrom":
+				local = append(local, listCDROMs()...)
+			case strings.HasPrefix(arg, "file="):
+				files = append(files, fileProvider(arg[5:]))
+			}
+		}
+		// Keep the existing network, local, then file precedence within a list.
+		for group, providers := range [][]Provider{network, local, files} {
+			for _, p := range providers {
+				if group == 1 {
+					log.Printf("Trying %s", p)
+				} else if group == 2 {
+					log.Printf("Trying file %s", p)
+				}
+				if probe(p) {
+					return p
+				}
+			}
+		}
+		return nil
+	}
+
+	switch {
+	case plat.provider != "":
+		log.Infof("metadata: DMI identifies %s (%s)", plat.provider, plat.evidence)
+		p := newProvider[plat.provider]()
+		if probe(p) {
+			return p
+		}
+		log.Errorf("metadata: DMI identifies %s but its metadata service did not answer; trying cdrom", plat.provider)
+	case plat.name != "":
+		log.Infof("metadata: detected %s (%s), no metadata provider", plat.name, plat.evidence)
+	default:
+		log.Infof("metadata: DMI unknown, probing aws/openstack, gcp, hetzner, scaleway, vultr, digitalocean, metaldata, vmware in parallel (%s)", budget)
+		ranked := []Provider{
+			newEC2(), newProvider["gcp"](), newProvider["hetzner"](),
+			newProvider["scaleway"](), newProvider["vultr"](),
+			newProvider["digitalocean"](), newProvider["metaldata"](),
+		}
+		ctx, cancel := withBudget(context.Background())
+		p := probeParallel(ctx, ranked, newVMware())
+		cancel()
+		if p != nil {
+			return p
+		}
+	}
+	for _, p := range listCDROMs() {
+		log.Printf("Trying %s", p)
+		if probe(p) {
+			return p
+		}
+	}
+	return nil
+}
+
+func run(args []string, plat platform) (Provider, []byte, error) {
+	p := chooseProvider(args, plat)
+	if p == nil {
+		return nil, nil, nil
+	}
+	log.Printf("%s: Probe succeeded", p)
+	userdata, err := extract(p)
+	return p, userdata, err
+}
 
 func main() {
 	log.SetFormatter(new(infoFormatter))
@@ -91,83 +200,12 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "metaldata", "vmware", "cdrom"}
-	args := flag.Args()
-	if len(args) > 0 {
-		providers = args
-	}
-	for _, p := range providers {
-		switch {
-		case p == "aws":
-			netProviders = append(netProviders, NewAWS())
-		case p == "gcp":
-			netProviders = append(netProviders, NewGCP())
-		case p == "hetzner":
-			netProviders = append(netProviders, NewHetzner())
-		case p == "openstack":
-			netProviders = append(netProviders, NewOpenstack())
-		case p == "scaleway":
-			netProviders = append(netProviders, NewScaleway())
-		case p == "vultr":
-			netProviders = append(netProviders, NewVultr())
-		case p == "digitalocean":
-			netProviders = append(netProviders, NewDigitalOcean())
-		case p == "metaldata":
-			netProviders = append(netProviders, NewMetalData())
-		case p == "vmware":
-			vmw := NewVMware()
-			if vmw != nil {
-				cdromProviders = append(cdromProviders, vmw)
-			}
-		case p == "cdrom":
-			cdromProviders = append(cdromProviders, ListCDROMs()...)
-		case strings.HasPrefix(p, "file="):
-			fileProviders = append(fileProviders, fileProvider(p[5:]))
-		default:
-			log.Fatalf("Unrecognised metadata provider: %s", p)
-		}
-	}
-
 	if err := os.MkdirAll(ConfigPath, 0755); err != nil {
 		log.Fatalf("Could not create %s: %s", ConfigPath, err)
 	}
 
-	var p Provider
-	var userdata []byte
-	var err error
-	found := false
-	for _, p = range netProviders {
-		if probe(p) {
-			log.Printf("%s: Probe succeeded", p)
-			userdata, err = extract(p)
-			found = true
-			break
-		}
-	}
-	if !found {
-		for _, p = range cdromProviders {
-			log.Printf("Trying %s", p.String())
-			if probe(p) {
-				log.Printf("%s: Probe succeeded", p)
-				userdata, err = extract(p)
-				found = true
-				break
-			}
-		}
-	}
-	if !found {
-		for _, p = range fileProviders {
-			log.Printf("Trying file %s", p.String())
-			if probe(p) {
-				log.Printf("%s: Probe succeeded", p)
-				userdata, err = extract(p)
-				found = true
-				break
-			}
-		}
-	}
-
-	if !found {
+	p, userdata, err := run(flag.Args(), identify())
+	if p == nil {
 		log.Printf("No metadata/userdata found. Bye")
 		return
 	}
