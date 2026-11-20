@@ -13,7 +13,7 @@ import (
 var (
 	dmiRoot            = "/sys/class/dmi/id"
 	hypervisorUUIDPath = "/sys/hypervisor/uuid"
-	instanceIDRe       = regexp.MustCompile(`^i-[0-9a-f]{8,17}$`)
+	instanceIDRe       = regexp.MustCompile(`^i-([0-9a-f]{8}|[0-9a-f]{17})$`)
 )
 
 // platform is the cloud the DMI/SMBIOS tables identify
@@ -50,8 +50,12 @@ func isEC2UUID(s string) bool {
 // identify matches the DMI tables against known clouds; first match wins
 func identify() platform {
 	dmi := map[string]string{}
-	for _, f := range []string{"sys_vendor", "product_name", "product_uuid", "product_serial", "board_asset_tag", "chassis_asset_tag"} {
-		dmi[f] = readTrimmed(f, filepath.Join(dmiRoot, f))
+	if _, err := os.Stat(dmiRoot); err != nil {
+		log.Debugf("metadata: no DMI at %s: %v", dmiRoot, err)
+	} else {
+		for _, f := range []string{"sys_vendor", "product_name", "product_uuid", "product_serial", "board_asset_tag", "chassis_asset_tag"} {
+			dmi[f] = readTrimmed(f, filepath.Join(dmiRoot, f))
+		}
 	}
 	hvUUID := readTrimmed("hypervisor_uuid", hypervisorUUIDPath)
 	found := func(name, provider, file, value string) platform {
@@ -65,9 +69,11 @@ func identify() platform {
 	switch v, p, s, tag := dmi["sys_vendor"], dmi["product_name"], dmi["product_serial"], dmi["chassis_asset_tag"]; {
 	case v == "Amazon EC2":
 		return found("aws", "aws", "sys_vendor", v)
-	case isEC2UUID(dmi["product_uuid"]):
+	// a random UUID starts with ec2 in one byte order or the other 1 time in 2048, so only trust it on Xen
+	case v == "Xen" && isEC2UUID(dmi["product_uuid"]):
 		return found("aws", "aws", "product_uuid", dmi["product_uuid"])
-	case isEC2UUID(hvUUID):
+	// only Xen guests have this file, and it is not byte-swapped
+	case strings.HasPrefix(strings.ToLower(hvUUID), "ec2"):
 		return found("aws", "aws", "hypervisor_uuid", hvUUID)
 	case instanceIDRe.MatchString(dmi["board_asset_tag"]):
 		return found("aws", "aws", "board_asset_tag", dmi["board_asset_tag"])
