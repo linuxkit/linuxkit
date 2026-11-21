@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 as build
+FROM linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 as build
 
 RUN apk add --no-cache go git musl-dev make curl gcc
 

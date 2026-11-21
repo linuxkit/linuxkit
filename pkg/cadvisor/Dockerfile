@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 as build
+FROM linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 as build
 
 RUN apk add --no-cache bash go git musl-dev linux-headers make patch
 # Hack to work around an issue with go on arm64 requiring gcc
@@ -21,7 +21,7 @@ RUN mkdir -p /go/src/${GITBASE} \
     && mv _output/cadvisor /usr/bin/
 
 
-FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS mirror
+FROM linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \

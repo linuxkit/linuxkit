@@ -2,7 +2,7 @@
 FROM debian@sha256:80381085775a6e69f0f8d09dd9a39495063e348382eb8d4881ba6f142d24b8ab AS qemu
 RUN apt-get update && apt-get install -y qemu-user-static
 
-FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS mirror
+FROM linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
