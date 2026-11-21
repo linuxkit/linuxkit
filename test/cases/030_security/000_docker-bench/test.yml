@@ -34,7 +34,7 @@ services:
      - /run:/var/run
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: test-docker-bench
-    image: linuxkit/test-docker-bench:f79bbef758ef0bd76d9b98306a67cb8cc75a294a
+    image: linuxkit/test-docker-bench:be5b919f6d35d801920f298ee93c0a6e06a45eb6
     ipc: host
     pid: host
     net: host
