@@ -1,10 +1,10 @@
-FROM --platform=linux/amd64 linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS alpine-amd64
+FROM --platform=linux/amd64 linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS alpine-amd64
 RUN apk add --no-cache systemd-boot systemd-efistub
 
-FROM --platform=linux/arm64 linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS alpine-arm64
+FROM --platform=linux/arm64 linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS alpine-arm64
 RUN apk add --no-cache systemd-boot systemd-efistub
 
-FROM --platform=linux/riscv64 linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS alpine-riscv64
+FROM --platform=linux/riscv64 linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS alpine-riscv64
 WORKDIR /work
 ADD https://github.com/systemd/systemd.git#v258.1 .
 RUN apk add --no-cache bash meson build-base coreutils gperf libcap-dev py3-jinja2 py3-elftools
