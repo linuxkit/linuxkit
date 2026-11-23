@@ -13,5 +13,3 @@ COPY --from=containerd-dev /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-
 COPY --from=alpine /usr/share/zoneinfo/UTC /etc/localtime
 COPY --from=alpine /etc/init.d/ /etc/init.d/
 COPY etc etc/
-COPY --from=alpine /etc/apk /etc/apk/
-COPY --from=alpine /lib/apk /lib/apk/

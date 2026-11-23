@@ -29,7 +29,7 @@ RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/005-volumes
 
 FROM linuxkit/alpine:d497d5be5b78bfd78268f3466cc4080aee5d7389 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
-RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
+RUN apk add --no-cache --initdb -p /out alpine-baselayout alpine-release busybox musl
 
 # Add /etc/ssl/certs so it can be bind-mounted into metadata package
 RUN mkdir -p /out/etc/ssl/certs
