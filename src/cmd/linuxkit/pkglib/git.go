@@ -3,7 +3,6 @@ package pkglib
 // Thin wrappers around git CLI invocations
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -88,19 +87,21 @@ func (g git) isWorkTree(pkg string) (bool, error) {
 
 func (g git) contentHash() (string, error) {
 	hash := sha256.New()
-	// list of files tracked by git that might have changed
-	trackedFiles, err := g.commandStdout(nil, "ls-files")
+	// list of files tracked by git that might have changed, with -z as git
+	// otherwise quotes names with non-ASCII or special characters
+	trackedFiles, err := g.commandStdout(nil, "ls-files", "-z")
 	if err != nil {
 		return "", err
 	}
-	untrackedFiles, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others")
+	untrackedFiles, err := g.commandStdout(nil, "ls-files", "-z", "--exclude-standard", "--others")
 	if err != nil {
 		return "", err
 	}
-	allFiles := strings.Join([]string{trackedFiles, untrackedFiles}, "\n")
-	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(allFiles)))
-	for scanner.Scan() {
-		filename := filepath.Join(g.dir, scanner.Text())
+	for _, name := range strings.Split(trackedFiles+untrackedFiles, "\x00") {
+		if name == "" {
+			continue
+		}
+		filename := filepath.Join(g.dir, name)
 		info, err := os.Lstat(filename)
 		if err != nil {
 			log.Debugf("cannot stat %s: %s, skipped", filename, err)
@@ -122,9 +123,6 @@ func (g git) contentHash() (string, error) {
 		if err = f.Close(); err != nil {
 			return "", err
 		}
-	}
-	if err = scanner.Err(); err != nil {
-		return "", err
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
