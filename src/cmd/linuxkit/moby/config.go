@@ -169,6 +169,7 @@ type ImageConfig struct {
 	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings,omitempty" json:"uidMappings,omitempty"`
 	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings,omitempty" json:"gidMappings,omitempty"`
 	Annotations       *map[string]string      `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+	ApparmorProfile   string                  `yaml:"apparmorProfile,omitempty" json:"apparmorProfile,omitempty"`
 
 	Runtime *Runtime `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
@@ -1127,8 +1128,8 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 		},
 		Rlimits:         rlimits,
 		NoNewPrivileges: assignBool(label.NoNewPrivileges, yaml.NoNewPrivileges),
-		// ApparmorProfile
-		OOMScoreAdj: assignIntPtr(label.OOMScoreAdj, yaml.OOMScoreAdj),
+		ApparmorProfile: assignStringEmpty(label.ApparmorProfile, yaml.ApparmorProfile),
+		OOMScoreAdj:     assignIntPtr(label.OOMScoreAdj, yaml.OOMScoreAdj),
 		// SelinuxLabel
 	}
 
