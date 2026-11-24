@@ -44,7 +44,8 @@ services:
       - /var/run:/var/run
       - /lib/modules:/lib/modules
       - /etc/docker/daemon.json:/etc/docker/daemon.json
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
+              "--oom-score-adjust", "-500"]
   - name: cadvisor
     image: linuxkit/cadvisor:7cc0856536f1db7cdbf10e0cd616d7dcf2e2ea21
 files:
