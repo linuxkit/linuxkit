@@ -17,9 +17,6 @@ github.com/elliotwutingfeng/asciiset
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/packethost/packngo v0.1.0
-## explicit
-github.com/packethost/packngo/metadata
 # github.com/pierrec/lz4/v4 v4.1.17
 ## explicit; go 1.14
 github.com/pierrec/lz4/v4
@@ -39,13 +36,6 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
-# github.com/vishvananda/netlink v0.0.0-20170808154308-f5a6f697a596
-## explicit
-github.com/vishvananda/netlink
-github.com/vishvananda/netlink/nl
-# github.com/vishvananda/netns v0.0.0-20170707011535-86bef332bfc3
-## explicit
-github.com/vishvananda/netns
 # github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3
 ## explicit; go 1.12
 github.com/vmware/vmw-guestinfo/bdoor

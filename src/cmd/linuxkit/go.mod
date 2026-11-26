@@ -52,7 +52,6 @@ require (
 	github.com/containerd/containerd/v2 v2.2.4
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/docker/buildx v0.21.1
-	github.com/equinix/equinix-sdk-go v0.42.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/in-toto/in-toto-golang v0.11.0
 	github.com/moby/sys/capability v0.4.0
