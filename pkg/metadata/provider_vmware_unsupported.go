@@ -2,6 +2,8 @@
 
 package main
 
+import "context"
+
 // ProviderVMware implements VMware provider interface for unsupported architectures
 type ProviderVMware struct{}
 
@@ -16,12 +18,12 @@ func (p *ProviderVMware) String() string {
 }
 
 // Probe implements provider interface
-func (p *ProviderVMware) Probe() bool {
+func (p *ProviderVMware) Probe(ctx context.Context) bool {
 	return false
 }
 
 // Extract implements provider interface
-func (p *ProviderVMware) Extract() ([]byte, error) {
+func (p *ProviderVMware) Extract(ctx context.Context) ([]byte, error) {
 	// Get vendor data, if empty do not fail
 	return nil, nil
 }

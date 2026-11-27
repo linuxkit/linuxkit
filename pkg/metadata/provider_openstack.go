@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -24,16 +25,16 @@ func (p *ProviderOpenstack) String() string {
 }
 
 // Probe checks if we are running on OpenStack
-func (p *ProviderOpenstack) Probe() bool {
+func (p *ProviderOpenstack) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
-	_, err := openstackGet(metaDataURL + "hostname")
+	_, err := openstackGet(ec2Base + "latest/meta-data/hostname")
 	return err == nil
 }
 
 // Extract gets both the OpenStack specific and generic userdata
-func (p *ProviderOpenstack) Extract() ([]byte, error) {
+func (p *ProviderOpenstack) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := openstackGet(metaDataURL + "hostname")
+	hostname, err := openstackGet(ec2Base + "latest/meta-data/hostname")
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (p *ProviderOpenstack) Extract() ([]byte, error) {
 	}
 
 	// Generic userdata
-	userData, err := openstackGet(userDataURL)
+	userData, err := openstackGet(ec2Base + "latest/user-data")
 	if err != nil {
 		log.Printf("OpenStack: Failed to get user-data: %s", err)
 		// This is not an error
@@ -77,7 +78,7 @@ func (p *ProviderOpenstack) Extract() ([]byte, error) {
 
 // lookup a value (lookupName) in OpenStack's metaservice and store in given fileName
 func openstackMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
-	if lookupValue, err := openstackGet(metaDataURL + lookupName); err == nil {
+	if lookupValue, err := openstackGet(ec2Base + "latest/meta-data/" + lookupName); err == nil {
 		// we got a value from the metadata server, now save to filesystem
 		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
@@ -117,7 +118,7 @@ func openstackGet(url string) ([]byte, error) {
 
 // SSH keys:
 func (p *ProviderOpenstack) handleSSH() error {
-	sshKeys, err := openstackGet(metaDataURL + "public-keys/0/openssh-key")
+	sshKeys, err := openstackGet(ec2Base + "latest/meta-data/public-keys/0/openssh-key")
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}
