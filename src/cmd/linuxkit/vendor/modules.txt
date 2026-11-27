@@ -265,9 +265,6 @@ github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
-# github.com/equinix/equinix-sdk-go v0.42.0
-## explicit; go 1.19
-github.com/equinix/equinix-sdk-go/services/metalv1
 # github.com/felixge/httpsnoop v1.0.4
 ## explicit; go 1.13
 github.com/felixge/httpsnoop

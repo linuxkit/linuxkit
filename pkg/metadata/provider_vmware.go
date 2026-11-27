@@ -1,13 +1,16 @@
-//go:build linux && 386 && amd64
+//go:build linux && (386 || amd64)
 
 package main
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path"
+	"runtime/debug"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -23,6 +26,28 @@ const (
 	guestVendorData = "guestinfo.vendordata"
 )
 
+// vmwareIsVirtualWorld and vmwareGuestInfo talk to the VMware backdoor; tests
+// replace them. IsVirtualWorld ignores access errors because the container has
+// no CAP_SYS_RAWIO, and by default VMware allows backdoor access from user mode.
+var vmwareIsVirtualWorld = vmcheck.IsVirtualWorld
+var vmwareGuestInfo = func(key string) (string, error) { return rpcvmx.NewConfig().String(key, "") }
+
+// vmwareIsVM reports whether we run on VMware. With
+// monitor_control.restrict_backdoor=TRUE the backdoor IN raises #GP at CPL3,
+// delivered as SIGSEGV with si_code SI_KERNEL; the runtime's sigpanic throws
+// on that unless SetPanicOnFault is on, so turn it on (for this goroutine,
+// restored on return) and recover so that metadata carries on.
+var vmwareIsVM = func() (isVM bool, err error) {
+	defer debug.SetPanicOnFault(debug.SetPanicOnFault(true))
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("metadata: VMware backdoor faulted: %v", r)
+			isVM, err = false, errors.New("vmware backdoor faulted")
+		}
+	}()
+	return vmwareIsVirtualWorld(true)
+}
+
 // ProviderVMware implements the Provider interface for VMware guestinfo api
 type ProviderVMware struct{}
 
@@ -37,8 +62,8 @@ func (p *ProviderVMware) String() string {
 }
 
 // Probe checks if we are running on VMware and either userdata or metadata is set
-func (p *ProviderVMware) Probe() bool {
-	isVM, err := vmcheck.IsVirtualWorld()
+func (p *ProviderVMware) Probe(ctx context.Context) bool {
+	isVM, err := vmwareIsVM()
 	if err != nil || !isVM {
 		return false
 	}
@@ -51,7 +76,7 @@ func (p *ProviderVMware) Probe() bool {
 
 // Extract gets the host specific metadata, generic userdata and if set vendordata
 // This function returns error if it fails to write metadata or vendordata to disk
-func (p *ProviderVMware) Extract() ([]byte, error) {
+func (p *ProviderVMware) Extract(ctx context.Context) ([]byte, error) {
 	// Get vendor data, if empty do not fail
 	vendorData, err := vmwareGet(guestVendorData)
 	if err != nil {
@@ -87,23 +112,21 @@ func (p *ProviderVMware) Extract() ([]byte, error) {
 
 // vmwareGet gets and extracts the guestinfo data
 func vmwareGet(name string) ([]byte, error) {
-	config := rpcvmx.NewConfig()
-
-	// get the gusest info value
-	out, err := config.String(name, "")
+	// get the guest info value
+	out, err := vmwareGuestInfo(name)
 	if err != nil {
 		log.Debugf("Getting guest info %s failed: error %s", name, err)
 		return nil, err
 	}
 
-	enc, err := config.String(name+".encoding", "")
+	enc, err := vmwareGuestInfo(name + ".encoding")
 	if err != nil {
 		log.Debugf("Getting guest info %s.encoding failed: error %s", name, err)
 		return nil, err
 	}
 
 	switch strings.TrimSuffix(enc, "\n") {
-	case " ":
+	case "":
 		return []byte(strings.TrimSuffix(out, "\n")), nil
 	case "base64":
 		r := base64.NewDecoder(base64.StdEncoding, strings.NewReader(out))

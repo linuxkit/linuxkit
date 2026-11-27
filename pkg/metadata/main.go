@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -13,22 +15,21 @@ import (
 )
 
 const (
-	// ConfigPath is where the data is extracted to
-	ConfigPath = "/run/config"
-
 	// Hostname is the filename in configPath where the hostname is stored
 	Hostname = "hostname"
 
 	// SSH is the path where sshd configuration from the provider is stored
 	SSH = "ssh"
-
-	// Standard AWS-compatible Metadata URLs
-	userDataURL = "http://169.254.169.254/latest/user-data"
-	metaDataURL = "http://169.254.169.254/latest/meta-data/"
 )
 
 var (
 	defaultLogFormatter = &log.TextFormatter{}
+
+	// ConfigPath is where the data is extracted to (a var so tests can override it)
+	ConfigPath = "/run/config"
+
+	// ec2Base is the AWS-compatible metadata service (a var so tests can override it)
+	ec2Base = "http://169.254.169.254/"
 )
 
 // infoFormatter overrides the default format for Info() log events to
@@ -49,21 +50,143 @@ type Provider interface {
 	String() string
 
 	// Probe returns true if the provider was detected.
-	Probe() bool
+	Probe(ctx context.Context) bool
 
 	// Extract user data. This may write some data, specific to a
 	// provider, to ConfigPath and should return the generic userdata.
-	Extract() ([]byte, error)
+	Extract(ctx context.Context) ([]byte, error)
 }
 
-// netProviders is a list of Providers offering metadata/userdata over the network
-var netProviders []Provider
+// probe runs p.Probe with a fresh retry budget
+func probe(p Provider) bool {
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	return p.Probe(ctx)
+}
 
-// cdromProviders is a list of Providers offering metadata/userdata data via CDROM
-var cdromProviders []Provider
+// extract runs p.Extract with a fresh retry budget
+func extract(p Provider) ([]byte, error) {
+	ctx, cancel := withBudget(context.Background())
+	defer cancel()
+	return p.Extract(ctx)
+}
 
-// fileProviders is a list of Providers offering metadata/userdata in a file on the filesystem
-var fileProviders []Provider
+var newProvider = map[string]func() Provider{
+	"aws":          func() Provider { return NewAWS() },
+	"gcp":          func() Provider { return NewGCP() },
+	"hetzner":      func() Provider { return NewHetzner() },
+	"openstack":    func() Provider { return NewOpenstack() },
+	"scaleway":     func() Provider { return NewScaleway() },
+	"vultr":        func() Provider { return NewVultr() },
+	"digitalocean": func() Provider { return NewDigitalOcean() },
+	"metaldata":    func() Provider { return NewMetalData() },
+}
+
+var newEC2 = func() Provider { return NewEC2() }
+var newVMware = func() Provider {
+	if p := NewVMware(); p != nil {
+		return p
+	}
+	return nil
+}
+var listCDROMs = ListCDROMs
+
+func mismatchWarning(plat platform, args []string) string {
+	if plat.provider == "" {
+		return ""
+	}
+	for _, arg := range args {
+		if arg == plat.provider {
+			return ""
+		}
+	}
+	return fmt.Sprintf("metadata: DMI says %s, but the command line lists %s; using the command line", plat.provider, strings.Join(args, ", "))
+}
+
+func chooseProvider(args []string, plat platform) Provider {
+	if len(args) > 0 {
+		// Validate the whole list before constructing or probing any provider.
+		for _, arg := range args {
+			if newProvider[arg] == nil && arg != "vmware" && arg != "cdrom" && !strings.HasPrefix(arg, "file=") {
+				log.Fatalf("Unrecognised metadata provider: %s", arg)
+			}
+		}
+		if warning := mismatchWarning(plat, args); warning != "" {
+			log.Warn(warning)
+		}
+		var network, local, files []Provider
+		for _, arg := range args {
+			switch {
+			case newProvider[arg] != nil:
+				network = append(network, newProvider[arg]())
+			case arg == "vmware":
+				if p := newVMware(); p != nil {
+					local = append(local, p)
+				}
+			case arg == "cdrom":
+				local = append(local, listCDROMs()...)
+			case strings.HasPrefix(arg, "file="):
+				files = append(files, fileProvider(arg[5:]))
+			}
+		}
+		// Keep the existing network, local, then file precedence within a list.
+		for group, providers := range [][]Provider{network, local, files} {
+			for _, p := range providers {
+				if group == 1 {
+					log.Printf("Trying %s", p)
+				} else if group == 2 {
+					log.Printf("Trying file %s", p)
+				}
+				if probe(p) {
+					return p
+				}
+			}
+		}
+		return nil
+	}
+
+	switch {
+	case plat.provider != "":
+		log.Infof("metadata: DMI identifies %s (%s)", plat.provider, plat.evidence)
+		p := newProvider[plat.provider]()
+		if probe(p) {
+			return p
+		}
+		log.Errorf("metadata: DMI identifies %s but its metadata service did not answer; trying cdrom", plat.provider)
+	case plat.name != "":
+		log.Infof("metadata: detected %s (%s), no metadata provider", plat.name, plat.evidence)
+	default:
+		log.Infof("metadata: DMI unknown, probing aws/openstack, gcp, hetzner, scaleway, vultr, digitalocean, metaldata, vmware in parallel (%s)", budget)
+		ranked := []Provider{
+			newEC2(), newProvider["gcp"](), newProvider["hetzner"](),
+			newProvider["scaleway"](), newProvider["vultr"](),
+			newProvider["digitalocean"](), newProvider["metaldata"](),
+		}
+		ctx, cancel := withBudget(context.Background())
+		p := probeParallel(ctx, ranked, newVMware())
+		cancel()
+		if p != nil {
+			return p
+		}
+	}
+	for _, p := range listCDROMs() {
+		log.Printf("Trying %s", p)
+		if probe(p) {
+			return p
+		}
+	}
+	return nil
+}
+
+func run(args []string, plat platform) (Provider, []byte, error) {
+	p := chooseProvider(args, plat)
+	if p == nil {
+		return nil, nil, nil
+	}
+	log.Printf("%s: Probe succeeded", p)
+	userdata, err := extract(p)
+	return p, userdata, err
+}
 
 func main() {
 	log.SetFormatter(new(infoFormatter))
@@ -77,85 +200,12 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "equinixmetal", "metaldata", "vmware", "cdrom"}
-	args := flag.Args()
-	if len(args) > 0 {
-		providers = args
-	}
-	for _, p := range providers {
-		switch {
-		case p == "aws":
-			netProviders = append(netProviders, NewAWS())
-		case p == "gcp":
-			netProviders = append(netProviders, NewGCP())
-		case p == "hetzner":
-			netProviders = append(netProviders, NewHetzner())
-		case p == "openstack":
-			netProviders = append(netProviders, NewOpenstack())
-		case p == "equinixmetal":
-			netProviders = append(netProviders, NewEquinixMetal())
-		case p == "scaleway":
-			netProviders = append(netProviders, NewScaleway())
-		case p == "vultr":
-			netProviders = append(netProviders, NewVultr())
-		case p == "digitalocean":
-			netProviders = append(netProviders, NewDigitalOcean())
-		case p == "metaldata":
-			netProviders = append(netProviders, NewMetalData())
-		case p == "vmware":
-			vmw := NewVMware()
-			if vmw != nil {
-				cdromProviders = append(cdromProviders, vmw)
-			}
-		case p == "cdrom":
-			cdromProviders = append(cdromProviders, ListCDROMs()...)
-		case strings.HasPrefix(p, "file="):
-			fileProviders = append(fileProviders, fileProvider(p[5:]))
-		default:
-			log.Fatalf("Unrecognised metadata provider: %s", p)
-		}
-	}
-
 	if err := os.MkdirAll(ConfigPath, 0755); err != nil {
 		log.Fatalf("Could not create %s: %s", ConfigPath, err)
 	}
 
-	var p Provider
-	var userdata []byte
-	var err error
-	found := false
-	for _, p = range netProviders {
-		if p.Probe() {
-			log.Printf("%s: Probe succeeded", p)
-			userdata, err = p.Extract()
-			found = true
-			break
-		}
-	}
-	if !found {
-		for _, p = range cdromProviders {
-			log.Printf("Trying %s", p.String())
-			if p.Probe() {
-				log.Printf("%s: Probe succeeded", p)
-				userdata, err = p.Extract()
-				found = true
-				break
-			}
-		}
-	}
-	if !found {
-		for _, p = range fileProviders {
-			log.Printf("Trying file %s", p.String())
-			if p.Probe() {
-				log.Printf("%s: Probe succeeded", p)
-				userdata, err = p.Extract()
-				found = true
-				break
-			}
-		}
-	}
-
-	if !found {
+	p, userdata, err := run(flag.Args(), identify())
+	if p == nil {
 		log.Printf("No metadata/userdata found. Bye")
 		return
 	}
@@ -179,13 +229,30 @@ func main() {
 	// do this early and don't really want another container for it.
 	hostname, err := os.ReadFile(path.Join(ConfigPath, Hostname))
 	if err == nil {
-		err := syscall.Sethostname(hostname)
+		name := kernelHostname(string(hostname))
+		if name != strings.TrimSpace(string(hostname)) {
+			log.Printf("Hostname %q does not fit the kernel, using %q", strings.TrimSpace(string(hostname)), name)
+		}
+		err := syscall.Sethostname([]byte(name))
 		if err != nil {
 			log.Printf("Failed to set hostname: %s", err)
 		} else {
-			log.Printf("Set hostname to: %s", string(hostname))
+			log.Printf("Set hostname to: %s", name)
 		}
 	}
+}
+
+// kernelHostname makes name fit the kernel's 64-byte hostname limit: a name
+// too long keeps its first label, cut to 63 bytes (a DNS label's limit) if needed
+func kernelHostname(name string) string {
+	name = strings.TrimSpace(name)
+	if len(name) > 64 {
+		name, _, _ = strings.Cut(name, ".")
+		if len(name) > 63 {
+			name = name[:63]
+		}
+	}
+	return name
 }
 
 // If the userdata is a json file, create a directory/file hierarchy.

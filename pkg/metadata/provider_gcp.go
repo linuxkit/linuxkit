@@ -1,19 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"strings"
-	"time"
 )
 
-const (
-	project  = "http://metadata.google.internal/computeMetadata/v1/project/"
-	instance = "http://metadata.google.internal/computeMetadata/v1/instance/"
+var (
+	// gcpBase is the GCP metadata service (a var so tests can override it)
+	gcpBase = "http://metadata.google.internal/computeMetadata/v1/"
+	// gcpHeader must be on every request, or GCP answers 403
+	gcpHeader = http.Header{"Metadata-Flavor": {"Google"}}
 )
 
 // ProviderGCP is the type implementing the Provider interface for GCP
@@ -30,62 +31,38 @@ func (p *ProviderGCP) String() string {
 }
 
 // Probe checks if we are running on GCP
-func (p *ProviderGCP) Probe() bool {
+func (p *ProviderGCP) Probe(ctx context.Context) bool {
 	// Getting the hostname should always work...
-	_, err := gcpGet(instance + "hostname")
+	_, err := get(ctx, gcpBase+"instance/hostname", gcpHeader)
 	return err == nil
 }
 
 // Extract gets both the GCP specific and generic userdata
-func (p *ProviderGCP) Extract() ([]byte, error) {
+func (p *ProviderGCP) Extract(ctx context.Context) ([]byte, error) {
 	// Get host name. This must not fail
-	hostname, err := gcpGet(instance + "hostname")
+	hostname, err := get(ctx, gcpBase+"instance/hostname", gcpHeader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GCP: %w", err)
 	}
-	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
+	// GCP serves the FQDN, often longer than the kernel's 64 bytes; use the short name
+	short, _, _ := strings.Cut(strings.TrimSpace(string(hostname)), ".")
+	err = os.WriteFile(path.Join(ConfigPath, Hostname), []byte(short), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("GCP: Failed to write hostname: %s", err)
 	}
 
-	if err := p.handleSSH(); err != nil {
+	if err := p.handleSSH(ctx); err != nil {
 		log.Printf("GCP: Failed to get ssh data: %s", err)
 	}
 
 	// Generic userdata
-	userData, err := gcpGet(instance + "attributes/user-data")
+	userData, err := get(ctx, gcpBase+"instance/attributes/user-data", gcpHeader)
 	if err != nil {
 		log.Printf("GCP: Failed to get user-data: %s", err)
 		// This is not an error
 		return nil, nil
 	}
 	return userData, nil
-}
-
-// gcpGet requests and extracts the requested URL
-func gcpGet(url string) ([]byte, error) {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	req, err := http.NewRequest("", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("GCP: http.NewRequest failed: %s", err)
-	}
-	req.Header.Set("Metadata-Flavor", "Google")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("GCP: Could not contact metadata service: %s", err)
-	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("GCP: Status not ok: %d", resp.StatusCode)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("GCP: Failed to read http response: %s", err)
-	}
-	return body, nil
 }
 
 // SSH keys:
@@ -99,8 +76,8 @@ func gcpGet(url string) ([]byte, error) {
 // TODO split them into individual user files and make the ssh
 //
 //	container construct those users
-func (p *ProviderGCP) handleSSH() error {
-	sshKeys, err := gcpGet(project + "attributes/ssh-keys")
+func (p *ProviderGCP) handleSSH(ctx context.Context) error {
+	sshKeys, err := get(ctx, gcpBase+"project/attributes/ssh-keys", gcpHeader)
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}
